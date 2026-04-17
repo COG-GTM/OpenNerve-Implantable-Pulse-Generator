@@ -180,6 +180,8 @@ typedef struct {
 	Ramp_t 		ramp;							/*!< Ramp up and down settings. */
 } BiphasicWave_t;
 
+extern BiphasicWave_t biphasicWave;
+
 typedef struct {
 	uint32_t tim_cnt;							/*!< The timer counts of the point on the sine period */
 	uint16_t dac_cnt;							/*!< DAC counts of the point on the sine period */

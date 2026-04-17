@@ -948,7 +948,7 @@ void app_func_stim_biphasic_para_set(Biphasic_Waveform_t biphasic_waveform) {
  *
  */
 void app_func_stim_biphasic_start(void) {
-	if (biphasicWave.is_running) {
+	if (biphasicWave.is_running || pulseWave1.is_running) {
 		return;
 	}
 
@@ -1013,11 +1013,14 @@ void app_func_stim_biphasic_stop(void) {
  * match the duration of the next phase.
  */
 void app_func_stim_biphasic_cb(void) {
-	uint32_t arr = __HAL_TIM_GET_AUTORELOAD(&HANDLE_PULSE1_TIM) + 1;
-
 	switch (biphasicWave.phase) {
 	case BIPHASIC_PHASE_CATHODIC:
-		biphasicWave.train_timer_us = (biphasicWave.train_timer_us + arr) % biphasicWave.train_period_us;
+	{
+		uint32_t total_pulse_us = biphasicWave.cathodic_width_us
+								+ biphasicWave.interphase_gap_us
+								+ biphasicWave.anodic_width_us
+								+ biphasicWave.interpulse_us;
+		biphasicWave.train_timer_us = (biphasicWave.train_timer_us + total_pulse_us) % biphasicWave.train_period_us;
 
 		if (biphasicWave.interphase_gap_us > 0) {
 			biphasicWave.phase = BIPHASIC_PHASE_INTERPHASE_GAP;
@@ -1035,6 +1038,7 @@ void app_func_stim_biphasic_cb(void) {
 			__HAL_TIM_SET_AUTORELOAD(&HANDLE_PULSE1_TIM, biphasicWave.anodic_width_us - 1);
 		}
 		break;
+	}
 
 	case BIPHASIC_PHASE_INTERPHASE_GAP:
 		biphasicWave.phase = BIPHASIC_PHASE_ANODIC;
