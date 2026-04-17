@@ -885,6 +885,10 @@ void app_func_stim_biphasic_para_set(Biphasic_Waveform_t biphasic_waveform) {
 	biphasicWave.train_period_us = (biphasic_waveform.trainOnDuration_ms + biphasic_waveform.trainOffDuration_ms) * 1000;
 	biphasicWave.train_on_duration_us = biphasic_waveform.trainOnDuration_ms * 1000;
 
+	if (biphasicWave.imc_is_enabled) {
+		biphasicWave.train_period_us = biphasicWave.train_on_duration_us;
+	}
+
 	if (biphasicWave.is_running) {
 		__HAL_TIM_SET_AUTORELOAD(&HANDLE_PULSE1_TIM, biphasicWave.pulse_period_us - 1);
 		__HAL_TIM_SET_COMPARE(&HANDLE_PULSE1_TIM, TIM_CHANNEL_1, biphasicWave.cathodic_width_us);
@@ -900,7 +904,7 @@ void app_func_stim_biphasic_para_set(Biphasic_Waveform_t biphasic_waveform) {
  * @param imc_en The enabled status of IMC
  */
 void app_func_stim_biphasic_start(bool imc_en) {
-	if (biphasicWave.is_running) {
+	if (biphasicWave.is_running || pulseWave1.is_running) {
 		return;
 	}
 
@@ -935,6 +939,7 @@ void app_func_stim_biphasic_start(bool imc_en) {
 		}
 	}
 
+	biphasicWave.imc_is_enabled = imc_en;
 	if (imc_en) {
 		biphasicWave.train_period_us = biphasicWave.train_on_duration_us;
 	}

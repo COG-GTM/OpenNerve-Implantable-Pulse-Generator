@@ -193,7 +193,12 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim) /* parasoft-supp
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) /* parasoft-suppress MISRAC2012-RULE_8_13-a "This definition comes from HAL." */
 {
 	if (htim == &HANDLE_PULSE1_TIM) {
-		app_func_stim_stim1_cb(TO_HIGH);
+		if (biphasicWave.is_running) {
+			app_func_stim_biphasic_cb(BIPHASIC_CATHODIC);
+		}
+		else {
+			app_func_stim_stim1_cb(TO_HIGH);
+		}
 	}
 	else if (htim == &HANDLE_PULSE2_TIM) {
 		app_func_stim_stim2_cb(TO_HIGH);
@@ -216,8 +221,19 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim)
 	if (htim == &HANDLE_SINE_TIM && htim->Channel == TIM_ACH_SINE_AMP) {
 		app_func_stim_sine_cb(AMP);
 	}
-	else if (htim == &HANDLE_PULSE1_TIM && htim->Channel == TIM_ACH_PULSE1_BEF_HI) {
-		app_func_stim_stim1_cb(BEFORE_HIGH);
+	else if (htim == &HANDLE_PULSE1_TIM && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
+		if (biphasicWave.is_running) {
+			app_func_stim_biphasic_cb(BIPHASIC_INTERPHASE);
+		}
+		else {
+			app_func_stim_stim1_cb(BEFORE_HIGH);
+		}
+	}
+	else if (htim == &HANDLE_PULSE1_TIM && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
+		app_func_stim_biphasic_cb(BIPHASIC_ANODIC);
+	}
+	else if (htim == &HANDLE_PULSE1_TIM && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
+		app_func_stim_biphasic_cb(BIPHASIC_IDLE);
 	}
 	else if (htim == &HANDLE_PULSE2_TIM && htim->Channel == TIM_ACH_PULSE2_BEF_HI) {
 		app_func_stim_stim2_cb(BEFORE_HIGH);

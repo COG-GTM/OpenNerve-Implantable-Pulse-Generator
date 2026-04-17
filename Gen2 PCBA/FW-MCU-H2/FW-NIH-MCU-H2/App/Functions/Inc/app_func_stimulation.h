@@ -197,8 +197,12 @@ typedef struct {
 
 	bool		pause_output;					/*!< Pause the signal output. */
 
+	bool		imc_is_enabled;					/*!< The IMC is enabled. */
+
 	Ramp_t		ramp;							/*!< Ramp up and down settings. */
 } BiphasicWave_t;
+
+extern BiphasicWave_t biphasicWave;
 
 /**
  * @brief Set the state of GPIOs of HV supply
