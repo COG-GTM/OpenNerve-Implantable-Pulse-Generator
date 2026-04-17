@@ -6,7 +6,9 @@
 #include "bsp_magnet.h"
 #include "app_config.h"
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 int32_t magnet_detected_sec_timer = -1;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 Magnet_Lost_Callback magLostCallback = NULL;
 
 /**

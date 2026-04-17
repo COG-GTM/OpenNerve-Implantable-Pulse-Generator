@@ -8,7 +8,9 @@
 
 #define	COUNT_MAX_ER	3		/*!< The maximum count value that triggers the "ER" event */
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 uint32_t battery_er_counter = 0;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 uint32_t battery_eos_counter = 0;
 
 /**
@@ -39,11 +41,15 @@ void app_mode_battery_test_handler(void) {
 	app_func_para_data_get((const uint8_t*)HPID_BATTERY_EOS_LEVEL, (uint8_t*)&battery_eos_level, (uint8_t)sizeof(battery_eos_level));
 
 	uint16_t vbatA = 0, vbatB = 0;
-	_Float64 battery_level = 0.0, batteryA_level = 0.0, batteryB_level = 0.0;
+	_Float64 battery_level = 0.0;
+	_Float64 batteryA_level = 0.0;
+	_Float64 batteryB_level = 0.0;
 
 	app_mode_battery_test_volt_get(&vbatA, &vbatB);
-	batteryA_level = ((_Float64)vbatA)/1000.0;
-	batteryB_level = ((_Float64)vbatB)/1000.0;
+	/* NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers) */
+	batteryA_level = ((_Float64)vbatA) / 1000.0;
+	/* NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers) */
+	batteryB_level = ((_Float64)vbatB) / 1000.0;
 
 	battery_er_counter 	= HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR1);
 	battery_eos_counter = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR2);

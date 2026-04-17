@@ -6,6 +6,7 @@
 #include "bsp_watchdog.h"
 #include "bsp_config.h"
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static bool wdg_enable = false;
 
 /**
