@@ -341,6 +341,21 @@ void app_func_stim_biphasic_ramp_set(uint32_t ramp_up_duration_ms, uint32_t ramp
 	biphasicWave.ramp.max_amplitude_mV 		= voltage_mv;
 	biphasicWave.ramp.curr_amplitude_mV 	= 0;
 
+	/* Clamp ramp durations so they fit within the train-on window and
+	 * do not overlap.  The generic ramp SPIDs allow up to 10 s while
+	 * the biphasic train-on minimum is only 1 s, so without clamping
+	 * the unsigned subtraction below would underflow to ~UINT32_MAX. */
+	uint32_t train_on = biphasicWave.train_on_duration_us;
+	if (biphasicWave.ramp.rampUpDuration_us > train_on) {
+		biphasicWave.ramp.rampUpDuration_us = train_on;
+	}
+	if (biphasicWave.ramp.rampDownDuration_us > train_on) {
+		biphasicWave.ramp.rampDownDuration_us = train_on;
+	}
+	if (biphasicWave.ramp.rampUpDuration_us + biphasicWave.ramp.rampDownDuration_us > train_on) {
+		biphasicWave.ramp.rampDownDuration_us = train_on - biphasicWave.ramp.rampUpDuration_us;
+	}
+
 	biphasicWave.ramp.rampUpStart_us = 0;
 	biphasicWave.ramp.rampUpEnd_us = biphasicWave.ramp.rampUpStart_us + biphasicWave.ramp.rampUpDuration_us;
 	biphasicWave.ramp.rampDownStart_us = biphasicWave.train_on_duration_us - biphasicWave.ramp.rampDownDuration_us;
