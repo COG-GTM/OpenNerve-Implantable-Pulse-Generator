@@ -44,14 +44,21 @@ NRF_LOG_MODULE_REGISTER();
 
 #define APP_BLE_PACKET_DATA_LEN             (BLE_GATT_ATT_MTU_DEFAULT - OPCODE_LENGTH - HANDLE_LENGTH)
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 NRF_BLE_GATT_DEF(m_gatt);                                                           /**< GATT module instance. */
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 NRF_BLE_QWR_DEF(m_qwr);                                                             /**< Context for the Queued Write module.*/
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 APP_TIMER_DEF(sec_check_tmr);
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 app_timer_t* p_sec_check_tmr = (app_timer_t*)sec_check_tmr;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint16_t   m_conn_handle          = BLE_CONN_HANDLE_INVALID;                 /**< Handle of the current connection. */
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint16_t   m_ble_nus_max_data_len = APP_BLE_PACKET_DATA_LEN;                 /**< Maximum length of data (in bytes) that can be transmitted to the peer by the Nordic UART service module. */
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 uint16_t* p_conn_handle = &m_conn_handle;
 
 typedef struct
@@ -60,11 +67,13 @@ typedef struct
     uint8_t disconnection_reason;
 } ble_status_t;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static ble_status_t ble_status = {
     .status = 0xFF,
     .disconnection_reason = 0,
 };
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint32_t sec_check_timeout = 0;
 
 /**
@@ -76,7 +85,7 @@ static uint32_t sec_check_timeout = 0;
 static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 {
     UNUSED_PARAMETER(p_context);
-    uint32_t err_code;
+    uint32_t err_code = 0;
 
     switch (p_ble_evt->header.evt_id)
     {
@@ -156,7 +165,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
  */
 static void ble_stack_init(void)
 {
-    ret_code_t err_code;
+    ret_code_t err_code = 0;
 
     err_code = nrf_sdh_enable_request();
     APP_ERROR_CHECK(err_code);
@@ -181,7 +190,7 @@ static void ble_stack_init(void)
  */
 static void gap_params_init(void)
 {
-    uint32_t                err_code;
+    uint32_t                err_code = 0;
     ble_gap_conn_params_t   gap_conn_params;
     ble_gap_conn_sec_mode_t sec_mode;
 
@@ -223,7 +232,7 @@ static void gatt_evt_handler(nrf_ble_gatt_t * p_gatt, nrf_ble_gatt_evt_t const *
  */
 static void gatt_init(void)
 {
-    ret_code_t err_code;
+    ret_code_t err_code = 0;
 
     err_code = nrf_ble_gatt_init(&m_gatt, gatt_evt_handler);
     APP_ERROR_CHECK(err_code);
@@ -239,7 +248,7 @@ static void gatt_init(void)
  */
 static void on_conn_params_evt(ble_conn_params_evt_t * p_evt)
 {
-    uint32_t err_code;
+    uint32_t err_code = 0;
 
     if (p_evt->evt_type == BLE_CONN_PARAMS_EVT_SUCCEEDED)
     {
@@ -270,7 +279,7 @@ static void conn_params_error_handler(uint32_t nrf_error)
  */
 static void conn_params_init(void)
 {
-    uint32_t               err_code;
+    uint32_t               err_code = 0;
     ble_conn_params_init_t cp_init;
 
     memset(&cp_init, 0, sizeof(cp_init));
@@ -343,8 +352,9 @@ void app_ble_init(void)
  */
 void app_ble_disconnect(void)
 {
-    if (m_conn_handle != BLE_CONN_HANDLE_INVALID)
+    if (m_conn_handle != BLE_CONN_HANDLE_INVALID) {
         APP_ERROR_CHECK(sd_ble_gap_disconnect(m_conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION));
+    }
 }
 
 /**

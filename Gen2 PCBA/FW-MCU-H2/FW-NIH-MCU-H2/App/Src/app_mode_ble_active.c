@@ -6,10 +6,17 @@
 #include "app_mode_ble_active.h"
 #include "app_config.h"
 
+#define DVDD_SCALE_FACTOR       4U
+#define MV_TO_100MV_DIVISOR     100U
+#define MV_TO_10MV_DIVISOR      10U
+
 const uint32_t msd_update_interval_s = 1U;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint32_t adv_ms_timer = 0U;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint8_t ble_act_user_class = USER_CLASS_INVALID;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static bool active_disconnect = false;
 
 /**
@@ -23,6 +30,7 @@ static bool active_disconnect = false;
  *
  * @return uint8_t HAL status
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 static HAL_StatusTypeDef setBitFromGpioState(uint8_t *buffer, size_t buffer_size, size_t bit_index, const GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin) {
     if (!buffer || !GPIOx) {
         return HAL_ERROR; // Null pointer error
@@ -111,9 +119,13 @@ static Cmd_Resp_t app_mode_ble_act_cmd_parser(Cmd_Req_t req) {
  * @return uint8_t 	The number of used bytes in the MSD buffer
  */
 uint8_t app_mode_ble_act_adv_msd_update(uint8_t* p_msd) {
+	/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 	static uint16_t dvdd_div4;
+	/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 	static uint16_t batt[2];
+	/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 	static uint16_t imp[2];
+	/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 	static uint16_t threm[3];
 
 	bsp_adc_single_sampling(HANDLE_ID_ADC1, ADC1_CHANNEL_DVDD, &dvdd_div4, 1, 1000);
@@ -124,14 +136,14 @@ uint8_t app_mode_ble_act_adv_msd_update(uint8_t* p_msd) {
 	app_func_meas_therm_meas(THERM_ID_OUT, (uint8_t*)&threm[1], sizeof(uint16_t), 1000);
 	app_func_meas_therm_meas(THERM_ID_OFST, (uint8_t*)&threm[2], sizeof(uint16_t), 1000);
 
-	uint8_t dvdd_100mv = dvdd_div4 * 4 / 100;
-	uint8_t battA_100mv = batt[0] / 100;
-	uint8_t battB_100mv = batt[1] / 100;
-	uint8_t impA_10mv = imp[0] / 10;
-	uint8_t impB_10mv = imp[1] / 10;
-	uint8_t thremRef_10mv = threm[0] / 10;
-	uint8_t thremOut_10mv = threm[1] / 10;
-	uint8_t thremOfst_10mv = threm[2] / 10;
+	uint8_t dvdd_100mv = (uint8_t)(dvdd_div4 * DVDD_SCALE_FACTOR / MV_TO_100MV_DIVISOR);
+	uint8_t battA_100mv = (uint8_t)(batt[0] / MV_TO_100MV_DIVISOR);
+	uint8_t battB_100mv = (uint8_t)(batt[1] / MV_TO_100MV_DIVISOR);
+	uint8_t impA_10mv = (uint8_t)(imp[0] / MV_TO_10MV_DIVISOR);
+	uint8_t impB_10mv = (uint8_t)(imp[1] / MV_TO_10MV_DIVISOR);
+	uint8_t thremRef_10mv = (uint8_t)(threm[0] / MV_TO_10MV_DIVISOR);
+	uint8_t thremOut_10mv = (uint8_t)(threm[1] / MV_TO_10MV_DIVISOR);
+	uint8_t thremOfst_10mv = (uint8_t)(threm[2] / MV_TO_10MV_DIVISOR);
 
 	uint8_t* buff_offset = p_msd;
 	*buff_offset++ = dvdd_100mv;    // msd[0]
@@ -192,6 +204,7 @@ uint8_t app_mode_ble_act_userclass_get(void) {
  * @brief Handler for BLE active mode
  * 
  */
+/* NOLINTNEXTLINE(readability-function-cognitive-complexity) */
 void app_mode_ble_act_handler(void) {
 	uint16_t curr_state = app_func_sm_current_state_get();
 	app_func_command_req_parser_set(&app_mode_ble_act_cmd_parser);

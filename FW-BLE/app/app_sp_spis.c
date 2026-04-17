@@ -31,12 +31,17 @@ static const nrf_drv_spis_t spis = NRF_DRV_SPIS_INSTANCE(SPIS_INSTANCE);/**< SPI
 #define RX_BUF_SIZE                DATA_BUFFER_MAX_SIZE
 #define TX_BUF_SIZE                (DATA_BUFFER_MAX_SIZE + 1)    //1 byte data length + data
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static volatile uint8_t m_tx_buf[TX_BUF_SIZE];
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static volatile uint8_t m_rx_buf[RX_BUF_SIZE];
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint8_t tx_offset = 0;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static volatile bool spis_xfer_done; /**< Flag used to indicate that SPIS instance completed the transfer. */
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static bool init = false;
 
 /**
@@ -47,6 +52,7 @@ static bool init = false;
 static void spis_event_handler(nrf_drv_spis_event_t event)
 {
     nrfx_spis_evt_type_t evt_type = event.evt_type;
+    /* NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers) */
     switch(evt_type)
     {
         case NRFX_SPIS_BUFFERS_SET_DONE:
@@ -87,7 +93,7 @@ static void spis_event_handler(nrf_drv_spis_event_t event)
               nrf_gpio_pin_clear(BLE_REQ_PIN);
               NRF_LOG_INFO("BLE_REQ_PIN[L]");
               NRF_LOG_FLUSH();
-              tx_offset -= (tx_size-1);
+              tx_offset = (uint8_t)(tx_offset - (tx_size - 1));
               for(int i = (int)tx_size;i < TX_BUF_SIZE;i++)
                 m_tx_buf[i-tx_size+1] = m_tx_buf[i];
              
@@ -103,6 +109,7 @@ static void spis_event_handler(nrf_drv_spis_event_t event)
             NRF_LOG_DEBUG("NRFX_SPIS_EVT_TYPE_MAX");
             break;
     }
+    /* NOLINTEND(cppcoreguidelines-avoid-magic-numbers) */
     NRF_LOG_FLUSH();
 }
 
@@ -152,8 +159,9 @@ void app_sp_spis_init(void)
  */
 static uint32_t app_sp_spis_put_byte(uint8_t byte)
 {
-    if (tx_offset == TX_BUF_SIZE-1)
+    if (tx_offset == TX_BUF_SIZE-1) {
         return NRF_ERROR_BUSY;
+    }
 
     m_tx_buf[tx_offset + 1] = byte;
     tx_offset++;
@@ -169,7 +177,7 @@ static uint32_t app_sp_spis_put_byte(uint8_t byte)
  */
 void app_sp_spis_put(uint8_t* data, uint16_t size)
 {
-        uint32_t err_code;
+        uint32_t err_code = 0;
         for (uint16_t i = 0; i < size; i++)
         {
             do

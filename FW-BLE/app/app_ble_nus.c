@@ -21,11 +21,15 @@
 NRF_LOG_MODULE_REGISTER();
 #include "nrf_log_ctrl.h"
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 BLE_NUS_DEF(m_nus, NRF_SDH_BLE_TOTAL_LINK_COUNT);                                   /**< BLE NUS service instance. */
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 ble_nus_t* p_nus = &m_nus;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static bool sec_enable = false;
 
 /**
@@ -84,7 +88,7 @@ static void nus_data_handler(ble_nus_evt_t * p_evt)
  */
 void app_ble_nus_init(nrf_ble_qwr_t* p_qwr)
 {
-    uint32_t           err_code;
+    uint32_t           err_code = 0;
     ble_nus_init_t     nus_init;
     nrf_ble_qwr_init_t qwr_init = {0};
 
@@ -168,8 +172,9 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             uint8_t sec_level = p_ble_evt->evt.gap_evt.params.conn_sec_update.conn_sec.sec_mode.lv;
             ble_gap_conn_sec_mode_t sec_check;
             BLE_GAP_CONN_SEC_MODE_SET_LESC_ENC_WITH_MITM(&sec_check);
-            if (sec_mode == sec_check.sm && sec_level == sec_check.lv)
+            if (sec_mode == sec_check.sm && sec_level == sec_check.lv) {
                 sec_enable = true;
+            }
         }
             break;
 

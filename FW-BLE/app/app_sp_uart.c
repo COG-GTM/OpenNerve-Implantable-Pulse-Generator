@@ -36,8 +36,11 @@ NRF_LOG_MODULE_REGISTER();
 
 #define UART_RX_DELAY_TIME_MS           10
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 APP_TIMER_DEF(rx_tmr);
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint8_t rx_data[UART_RX_BUF_SIZE];
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint16_t index = 0;
 
 /**
@@ -60,7 +63,7 @@ static void uart_rx_timer_handler(void * p_context)
  */
 static void uart_event_handle(app_uart_evt_t * p_event)
 {
-    uint32_t       err_code;
+    uint32_t       err_code = 0;
     switch (p_event->evt_type)
     {
         case APP_UART_DATA_READY:
@@ -90,7 +93,7 @@ static void uart_event_handle(app_uart_evt_t * p_event)
  */
 void app_sp_uart_init(void)
 {
-    uint32_t err_code;
+    uint32_t err_code = 0;
     app_uart_comm_params_t const comm_params =
     {
         .rx_pin_no    = BLE_RX_PIN,
@@ -131,8 +134,9 @@ void app_sp_uart_put(uint8_t* data, uint16_t size)
         do
         {
             err_code = app_uart_put(data[i]);
-            if ((err_code != NRF_SUCCESS) && (err_code != NRF_ERROR_BUSY))
+            if ((err_code != NRF_SUCCESS) && (err_code != NRF_ERROR_BUSY)) {
                 APP_ERROR_CHECK(err_code);
+            }
         } while (err_code == NRF_ERROR_BUSY);
     }
 }

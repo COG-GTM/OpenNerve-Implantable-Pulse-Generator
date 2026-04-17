@@ -23,6 +23,7 @@
 NRF_LOG_MODULE_REGISTER();
 #include "nrf_log_ctrl.h"
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static app_cmd_resp_t response;
 
 /**
@@ -34,6 +35,7 @@ static app_cmd_resp_t response;
  * @param payload_len The length of the payload
  * @return app_cmd_resp_t* The generated response command
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 static app_cmd_resp_t* generate_response(uint8_t opcode, uint8_t status, uint8_t* payload, uint8_t payload_len)
 {
     response.cmd_resp_len = RESP_HEADER_LEN + payload_len + CRC_LEN;
@@ -41,8 +43,9 @@ static app_cmd_resp_t* generate_response(uint8_t opcode, uint8_t status, uint8_t
     response.cmd_resp[1] = payload_len;
     response.cmd_resp[2] = status;
 
-    if (payload_len > 0 && payload != NULL)
+    if (payload_len > 0 && payload != NULL) {
         memcpy(response.cmd_resp + RESP_HEADER_LEN, payload, payload_len);
+    }
 
     uint16_t crc16 = crc16_compute(response.cmd_resp, response.cmd_resp_len - CRC_LEN, NULL);
     memcpy(response.cmd_resp + response.cmd_resp_len - CRC_LEN, (uint8_t*)&crc16, CRC_LEN);
@@ -57,6 +60,7 @@ static app_cmd_resp_t* generate_response(uint8_t opcode, uint8_t status, uint8_t
  * @param cmd_len The length of the command
  * @return app_cmd_resp_t* The response command of request command
  */
+/* NOLINTNEXTLINE(readability-function-cognitive-complexity) */
 app_cmd_resp_t* app_cmd_parse_request(uint8_t* p_cmd, uint16_t cmd_len)
 {
     NRF_LOG_HEXDUMP_INFO((uint8_t*)p_cmd, cmd_len);
@@ -68,7 +72,7 @@ app_cmd_resp_t* app_cmd_parse_request(uint8_t* p_cmd, uint16_t cmd_len)
     uint8_t   resp_payload_length = 0;
     uint8_t*  resp_payload        = NULL;
 
-    uint16_t cmd_crc16;
+    uint16_t cmd_crc16 = 0;
     memcpy((uint8_t*)&cmd_crc16, p_cmd + cmd_len - CRC_LEN, CRC_LEN);
     uint16_t cal_crc16 = crc16_compute(p_cmd, cmd_len - CRC_LEN, NULL);
 
