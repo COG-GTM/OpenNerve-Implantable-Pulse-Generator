@@ -47,12 +47,29 @@ typedef enum
 	POLR_NEG,
 } SINE_InterruptState;
 
+typedef enum
+{
+	BIPHASIC_CATHODIC = 0U,
+	BIPHASIC_INTERPHASE,
+	BIPHASIC_ANODIC,
+	BIPHASIC_IDLE,
+} BIPHASIC_InterruptState;
+
 typedef struct {
 	uint32_t 	pulseWidth_us;				/*!< The pulse width of the stimulus waveform, unit: us */
 	uint32_t 	pulsePeriod_us;				/*!< The pulse period of the stimulus waveform, unit: us */
 	uint32_t 	trainOnDuration_ms;			/*!< The train on duration of the stimulus waveform, unit: ms */
 	uint32_t 	trainOffDuration_ms;		/*!< The train off duration of the stimulus waveform, unit: ms */
 } Stimulus_Waveform_t;
+
+typedef struct {
+	uint32_t	cathodicWidth_us;			/*!< Cathodic (first) phase pulse width, unit: us */
+	uint32_t	anodicWidth_us;				/*!< Anodic (second) phase pulse width, unit: us */
+	uint32_t	interphaseGap_us;			/*!< Gap between cathodic and anodic phases, unit: us */
+	uint32_t	pulsePeriod_us;				/*!< Overall pulse repetition period, unit: us */
+	uint32_t	trainOnDuration_ms;			/*!< Train on duration, unit: ms */
+	uint32_t	trainOffDuration_ms;		/*!< Train off duration, unit: ms */
+} Biphasic_Waveform_t;
 
 typedef struct {
 	uint32_t	sinePeriod_us;				/*!< The period of the sine waveform, unit: us */
@@ -160,6 +177,28 @@ typedef struct {
 	Sine_Point_t sine_points[SINE_PERIOD_POINTS];	/*!< The points on the sine period */
 	uint16_t sine_point_idx;						/*!< Current index of the point on the sine period */
 } SineWave_t;
+
+typedef struct {
+	uint32_t	cathodic_width_us;				/*!< The cathodic phase pulse width, unit: us */
+	uint32_t	anodic_width_us;				/*!< The anodic phase pulse width, unit: us */
+	uint32_t	interphase_gap_us;				/*!< The interphase gap duration, unit: us */
+	uint32_t	pulse_period_us;				/*!< The overall pulse repetition period, unit: us */
+
+	uint32_t	train_period_us;				/*!< The period of the train signal, unit: us */
+	uint32_t	train_on_duration_us;			/*!< Duration of train-on time, unit: us */
+	uint32_t	train_timer_us;					/*!< The timer of the train signal, unit: us */
+
+	bool		is_running;						/*!< The waveform is running */
+
+	Stim_Sel_Ch_t sel_positive;					/*!< The multiplexer positive settings */
+	Stim_Sel_Ch_t sel_negative;					/*!< The multiplexer negative settings */
+	Stim_Sel_Ch_t sel_discharge;					/*!< The multiplexer discharge settings */
+	Stim_Sel_Ch_t sel_enabled;					/*!< The multiplexer enabled CH */
+
+	bool		pause_output;					/*!< Pause the signal output. */
+
+	Ramp_t		ramp;							/*!< Ramp up and down settings. */
+} BiphasicWave_t;
 
 /**
  * @brief Set the state of GPIOs of HV supply
@@ -331,6 +370,33 @@ void app_func_stim_sine_stop(void);
  * @param state Callback state
  */
 void app_func_stim_sine_cb(SINE_InterruptState state);
+
+/**
+ * @brief Set the waveform settings of biphasic stimulation
+ *
+ * @param biphasic_waveform The waveform settings
+ */
+void app_func_stim_biphasic_para_set(Biphasic_Waveform_t biphasic_waveform);
+
+/**
+ * @brief Generate biphasic waveforms based on waveform settings and current source settings
+ *
+ * @param imc_en The enabled status of IMC
+ */
+void app_func_stim_biphasic_start(bool imc_en);
+
+/**
+ * @brief Stop biphasic waveform
+ *
+ */
+void app_func_stim_biphasic_stop(void);
+
+/**
+ * @brief Timer callback of the biphasic waveform
+ *
+ * @param state Callback state
+ */
+void app_func_stim_biphasic_cb(BIPHASIC_InterruptState state);
 
 /**
  * @brief Synchronizes the timers of all waveforms.
