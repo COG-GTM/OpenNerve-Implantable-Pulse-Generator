@@ -14,12 +14,18 @@
 
 /* ---- Module-level state ---- */
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static bool    battery_a_present   = false;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static bool    battery_b_present   = false;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint8_t battery_a_low_count = 0U;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint8_t battery_b_low_count = 0U;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint32_t wpt_ms_timer       = 0U;   /*!< Counts down to 0 for 1-second sample ticks */
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint32_t wpt_paused_hold_ms = 0U;   /*!< Minimum hold time in PAUSED after an OVP event */
 
 /* ---- Thermistor lookup table (104AP-2 NTC, from charger firmware svc_wpt_manager.h) ---- */
@@ -50,13 +56,16 @@ static const ThermEntry_t k_therm_table[] = {
  * @param therm_ofst_mv  THERM_OFST ADC reading, mV
  * @return float         Calculated temperature in °C
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 static float app_mode_wpt_calc_temperature(uint16_t therm_ref_mv, uint16_t therm_out_mv, uint16_t therm_ofst_mv)
 {
-    float voltage      = (float)therm_out_mv  - (float)therm_ofst_mv;  /* across thermistor */
-    float voltage_drop = (float)therm_ref_mv  - (float)therm_out_mv;   /* across 49.9kΩ sense resistor */
+    float voltage      = 0.0F;
+    float voltage_drop = 0.0F;
+    voltage      = (float)therm_out_mv  - (float)therm_ofst_mv;  /* across thermistor */
+    voltage_drop = (float)therm_ref_mv  - (float)therm_out_mv;   /* across 49.9kΩ sense resistor */
 
-    if (voltage_drop <= 0.0f || voltage <= 0.0f) {
-        return 0.0f;  /* invalid / unpowered — treat as cold */
+    if (voltage_drop <= 0.0F || voltage <= 0.0F) {
+        return 0.0F;  /* invalid / unpowered — treat as cold */
     }
 
     float current    = voltage_drop / WPT_THERM_SENSE_RESISTOR_OHM;
@@ -82,7 +91,7 @@ static float app_mode_wpt_calc_temperature(uint16_t therm_ref_mv, uint16_t therm
         }
     }
 
-    return 0.0f;
+    return 0.0F;
 }
 
 /**
@@ -106,6 +115,7 @@ void app_mode_wpt_timer_cb(void)
  * advertising, and runs the charging state machine until the coil is removed
  * (state reverts to STATE_ACT_MODE_BLE_ACT via the VRECT EXTI callback).
  */
+/* NOLINTNEXTLINE(readability-function-cognitive-complexity) */
 void app_mode_wpt_handler(void)
 {
     uint16_t curr_state = app_func_sm_current_state_get();

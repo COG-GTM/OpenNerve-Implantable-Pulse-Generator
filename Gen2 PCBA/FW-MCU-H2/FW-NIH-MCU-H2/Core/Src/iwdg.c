@@ -24,6 +24,7 @@
 
 /* USER CODE END 0 */
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 IWDG_HandleTypeDef hiwdg;
 
 /* IWDG init function */

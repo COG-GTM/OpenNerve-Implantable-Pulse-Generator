@@ -12,12 +12,13 @@
  * @param Vout The output voltage in V
  * @return _Float64 The resistance value of R2
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 _Float64 LT1615_R2_calculate(_Float64 R1, _Float64 Vout) {
 	_Float64 factor = (Vout / LT1615_FB_CTP) - 1.0;
 	if (factor > 0) {
 		return R1 / factor;
 	}
-	else {
-		return R1;
-	}
+	/* TODO: else branch returns same base value — behaviour may need to
+	 * differ for factor == 0 vs factor < 0 (bugprone-branch-clone). */
+	return R1;
 }

@@ -24,9 +24,13 @@
 
 /* USER CODE END 0 */
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 LPTIM_HandleTypeDef hlptim1;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 LPTIM_HandleTypeDef hlptim2;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 LPTIM_HandleTypeDef hlptim3;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 LPTIM_HandleTypeDef hlptim4;
 
 /* LPTIM1 init function */
