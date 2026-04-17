@@ -26,15 +26,21 @@
 NRF_LOG_MODULE_REGISTER();
 #include "nrf_log_ctrl.h"
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static pm_conn_sec_status_t min_conn_sec;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint8_t app_passkey[BLE_GAP_PASSKEY_LEN] = APP_BLE_PASSKEY;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint16_t m_conn_handle;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static bool sec_enable = false;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static bool whitelist_reload = false;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static pm_peer_data_bonding_t wl_peer_data;
 
 /**

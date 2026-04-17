@@ -30,13 +30,19 @@
 NRF_LOG_MODULE_REGISTER();
 #include "nrf_log_ctrl.h"
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint8_t data_buffer[DATA_BUFFER_GROUP_COUNT][DATA_BUFFER_MAX_SIZE];
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint16_t data_lengths[DATA_BUFFER_GROUP_COUNT];
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint8_t write_idx = 0;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint8_t read_idx = 0;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint8_t data_count = 0;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static bool init = false;
 
 typedef struct
@@ -45,6 +51,7 @@ typedef struct
     uint8_t resp_port;
 } app_sp_cmd_resp_t;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static app_sp_cmd_resp_t response;
 
 static void buffer_add(const uint8_t* data, uint16_t size) {
@@ -85,15 +92,17 @@ void app_sp_init(void)
  */
 void app_sp_put(uint8_t port, uint8_t const* data, uint16_t size)
 {
-    if (!init)
+    if (!init) {
         return;
+    }
 
     if (port == SP_ALL)
     {
         app_sp_spis_put((uint8_t*)data, size);
 
-        if (APP_SP_DEBUG_ENABLE)
+        if (APP_SP_DEBUG_ENABLE) {
             app_sp_uart_put((uint8_t*)data, size); //Send to debug port
+        }
     }
     else if (port == SP_SPI)
     {
@@ -101,8 +110,9 @@ void app_sp_put(uint8_t port, uint8_t const* data, uint16_t size)
     }
     else if (port == SP_UART)
     {
-        if (APP_SP_DEBUG_ENABLE)
+        if (APP_SP_DEBUG_ENABLE) {
             app_sp_uart_put((uint8_t*)data, size); //Send to debug port
+        }
     }
 }
 

@@ -6,15 +6,28 @@
 #include "app_func_ble.h"
 #include "app_config.h"
 
+#define BLE_POWER_CYCLE_DELAY_MS     100
+#define BLE_SPI_INIT_DELAY_MS        10
+#define BLE_RESET_LOW_DELAY_MS       50
+#define BLE_RESET_HIGH_DELAY_MS      200
+#define BLE_CMD_HANDLER_MAX_RETRIES  100U
+
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 uint8_t ble_curr_state = BLE_STATE_INVALID;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 uint8_t disconnection_reason = 0;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 int32_t magnet_rst_ble_def_min_timer = -1;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 uint8_t magnet_reset_counter = 0;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 bool	ble_whitelist_added = false;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 bool	ble_peers_is_deleted = false;
 
+/* NOLINTNEXTLINE(readability-function-cognitive-complexity) */
 static void app_func_ble_resp_cmd_parser(Cmd_Resp_t resp) {
     uint8_t len_payload_min = 0;
     uint8_t len_payload_max = 0;
@@ -51,17 +64,7 @@ static void app_func_ble_resp_cmd_parser(Cmd_Resp_t resp) {
 		break;
 
 	case OP_BLE_ADV_STOP:
-	{
-		if(resp.Status == STATUS_SUCCESS) {
-			len_payload_min = 0;
-			len_payload_max = 0;
-			if ((resp.PayloadLen >= len_payload_min) && (resp.PayloadLen <= len_payload_max)) {
-				app_func_ble_curr_state_update(BLE_STATE_ADV_STOP);
-			}
-		}
-	}
-		break;
-
+	/* fall through — identical handling for disconnect */
 	case OP_BLE_DISCONNECT:
 	{
 		if(resp.Status == STATUS_SUCCESS) {
@@ -115,30 +118,30 @@ void app_func_ble_enable(bool enable) {
 	bsp_sp_deinit();
 	HAL_GPIO_WritePin(BLE_PWRn_GPIO_Port, BLE_PWRn_Pin, GPIO_PIN_SET); /* parasoft-suppress MISRAC2012-RULE_11_4-a "This definition comes from HAL." */
 	HAL_GPIO_WritePin(BLE_RSTn_GPIO_Port, BLE_RSTn_Pin, GPIO_PIN_RESET); /* parasoft-suppress MISRAC2012-RULE_11_4-a "This definition comes from HAL." */
-	HAL_Delay(100);
+	HAL_Delay(BLE_POWER_CYCLE_DELAY_MS);
 
 	if (enable) {
 		app_func_command_resp_parser_set(&app_func_ble_resp_cmd_parser);
 		HAL_GPIO_WritePin(BLE_RSTn_GPIO_Port, BLE_RSTn_Pin, GPIO_PIN_SET);
 		HAL_GPIO_WritePin(BLE_PWRn_GPIO_Port, BLE_PWRn_Pin, GPIO_PIN_RESET);
-		HAL_Delay(100);
+		HAL_Delay(BLE_POWER_CYCLE_DELAY_MS);
 		bsp_sp_init(&app_func_command_parser, &bsp_fram_write_cplt_cb);
-		HAL_Delay(10);
+		HAL_Delay(BLE_SPI_INIT_DELAY_MS);
 
 		bsp_wdg_refresh();
 		uint8_t counter = 0;
 		while(ble_curr_state == BLE_STATE_INVALID) {	//Wait for BLE to be ready
 			while(HAL_GPIO_ReadPin(BLE_RDY_GPIO_Port, BLE_RDY_Pin) == GPIO_PIN_RESET) {
 				HAL_GPIO_WritePin(BLE_RSTn_GPIO_Port, BLE_RSTn_Pin, GPIO_PIN_RESET);
-				HAL_Delay(50);
+				HAL_Delay(BLE_RESET_LOW_DELAY_MS);
 				HAL_GPIO_WritePin(BLE_RSTn_GPIO_Port, BLE_RSTn_Pin, GPIO_PIN_SET);
-				HAL_Delay(200);
+				HAL_Delay(BLE_RESET_HIGH_DELAY_MS);
 				//bsp_wdg_refresh();	//Only for debugging / flashing! Remove for real use
 			}
 
 			app_func_ble_new_state_get();
 			counter = 0U;
-			while(!bsp_sp_cmd_handler() && counter < 100U) {
+			while(!bsp_sp_cmd_handler() && counter < BLE_CMD_HANDLER_MAX_RETRIES) {
 				counter++;
 			}
 		}
@@ -261,12 +264,7 @@ void app_func_ble_default_timer_cb(void) {
  * @return bool BLE is default or not.
  */
 bool app_func_ble_is_default (void) {
-	if ((magnet_rst_ble_def_min_timer > 0) && (magnet_reset_counter >= MAGNET_RESET_COUNT)) {
-		return true;
-	}
-	else {
-		return false;
-	}
+	return ((magnet_rst_ble_def_min_timer > 0) && (magnet_reset_counter >= MAGNET_RESET_COUNT));
 }
 
 /**

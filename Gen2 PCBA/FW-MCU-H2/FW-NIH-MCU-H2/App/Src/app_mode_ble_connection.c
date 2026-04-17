@@ -11,22 +11,35 @@
 #define SAMPLE_FREQ_ENG		5000U
 
 #define BLE_ACCESS_TIME_MS	1000
+#define MS_PER_SECOND		1000.0
+#define SENSOR_SAMPLING_FREQ_MIN_HZ	1.5F
+#define SENSOR_SAMPLING_FREQ_MAX_HZ	6553.5F
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 int32_t idle_connection_ms_timer = -1;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 int32_t disconnect_request_ms_timer = -1;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static int32_t ble_access_ms_timer = -1;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static _Float64 ble_idle_connection_f = 0.0;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static bool sw_reset = false;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static bool stim_en = false;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static bool sens_en = false;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint8_t sensor_resp_payload[LEN_RESP_PAYLOAD_MAX];
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Cmd_Resp_t sensor_resp;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 extern bool vnsb_en;
 
 /**
@@ -35,6 +48,7 @@ extern bool vnsb_en;
  * @param req Request command to be parsed
  * @return Cmd_Resp_t The response command to be replied after parsing the request command
  */
+/* NOLINTNEXTLINE(readability-function-cognitive-complexity) */
 static Cmd_Resp_t app_mode_ble_conn_cmd_parser(Cmd_Req_t req) {
 	Cmd_Resp_t resp = {
 			.Opcode 		= req.Opcode,
@@ -49,11 +63,14 @@ static Cmd_Resp_t app_mode_ble_conn_cmd_parser(Cmd_Req_t req) {
 	uint8_t user_class = app_mode_ble_act_userclass_get();
 
 	app_func_para_data_get((const uint8_t*)HPID_BLE_IDLE_CONNECTION, (uint8_t*)&ble_idle_connection_f, (uint8_t)sizeof(ble_idle_connection_f));
-	ble_idle_connection_f *= 1000.0;
+	ble_idle_connection_f *= MS_PER_SECOND;
 	idle_connection_ms_timer = (int32_t)ble_idle_connection_f;
 
+	/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 	static RTC_TimeTypeDef rtc_time;
+	/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 	static RTC_DateTypeDef rtc_date;
+	/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 	static uint8_t resp_payload[LEN_RESP_PAYLOAD_MAX];
 
 	switch(req.Opcode) {
@@ -213,7 +230,7 @@ static Cmd_Resp_t app_mode_ble_conn_cmd_parser(Cmd_Req_t req) {
 		else {
 			_Float64 ble_disconnect_request_f = 0.0;
 			app_func_para_data_get((const uint8_t*)HPID_BLE_DISCONNECT_REQUEST, (uint8_t*)&ble_disconnect_request_f, (uint8_t)sizeof(ble_disconnect_request_f));
-			ble_disconnect_request_f *= 1000.0;
+			ble_disconnect_request_f *= MS_PER_SECOND;
 			disconnect_request_ms_timer = (int32_t)ble_disconnect_request_f;
 		}
 	}
@@ -231,10 +248,11 @@ static Cmd_Resp_t app_mode_ble_conn_cmd_parser(Cmd_Req_t req) {
 			resp.Status = STATUS_USER_CLASS_ERR;
 		}
 		else {
-			if (req.PayloadLen == len_payload_max)
+			if (req.PayloadLen == len_payload_max) {
 				vnsb_en = (req.Payload[0] > 0)?true:false;
-			else
+			} else {
 				vnsb_en = false;
+			}
 
 			app_func_sm_schd_therapy_enable(true);
 		}
@@ -270,10 +288,11 @@ static Cmd_Resp_t app_mode_ble_conn_cmd_parser(Cmd_Req_t req) {
 			resp.Status = STATUS_USER_CLASS_ERR;
 		}
 		else {
-			if (req.PayloadLen == len_payload_max)
+			if (req.PayloadLen == len_payload_max) {
 				vnsb_en = (req.Payload[0] > 0)?true:false;
-			else
+			} else {
 				vnsb_en = false;
+			}
 
 			if (app_mode_therapy_start() != true) {
 				resp.Status = STATUS_INVALID;
@@ -369,23 +388,23 @@ static Cmd_Resp_t app_mode_ble_conn_cmd_parser(Cmd_Req_t req) {
 		}
 		else {
 			uint8_t sensorID = req.Payload[0];
-			float specifySamplingFrequency = 0.0;
+			float specifySamplingFrequency = 0.0F;
 			if (req.PayloadLen == len_payload_max) {
 				memcpy(&specifySamplingFrequency, &req.Payload[1], sizeof(float));
-				if (specifySamplingFrequency < 1.5f || specifySamplingFrequency > 6553.5f) {
+				if (specifySamplingFrequency < SENSOR_SAMPLING_FREQ_MIN_HZ || specifySamplingFrequency > SENSOR_SAMPLING_FREQ_MAX_HZ) {
 					resp.Status = STATUS_INVALID;
 					break;
 				}
 			}
 
-			uint16_t samplingFrequency_hz;
+			uint16_t samplingFrequency_hz = 0;
 			uint8_t* buff = &sensor_resp_payload[1];
 			sensor_resp_payload[0] = 0U;
 			uint8_t bufferSize = SAMPLE_POINTS * sizeof(uint16_t);
 
 			if (sensorID == SENSOR_ID_ECG_HR || sensorID == SENSOR_ID_ECG_RR || sensorID == SENSOR_ID_ENG1 || sensorID == SENSOR_ID_ENG2) {
 			    sens_en = true;
-		        if (specifySamplingFrequency == 0.0) {
+		        if (specifySamplingFrequency == 0.0F) {
 				    samplingFrequency_hz = (sensorID == SENSOR_ID_ENG1 || sensorID == SENSOR_ID_ENG2) ? SAMPLE_FREQ_ENG : SAMPLE_FREQ_ECG;
 		        }
 		        else {
@@ -611,23 +630,29 @@ static Cmd_Resp_t app_mode_ble_conn_cmd_parser(Cmd_Req_t req) {
 			resp.Status = STATUS_USER_CLASS_ERR;
 		}
 		else {
-			if(!IS_RTC_YEAR(*(req.Payload)))
+			if(!IS_RTC_YEAR(*(req.Payload))) {
 				resp.Status = STATUS_INVALID;
+			}
 
-			if(!IS_RTC_MONTH(*(req.Payload + 1)))
+			if(!IS_RTC_MONTH(*(req.Payload + 1))) {
 				resp.Status = STATUS_INVALID;
+			}
 
-			if(!IS_RTC_DATE(*(req.Payload + 2)))
+			if(!IS_RTC_DATE(*(req.Payload + 2))) {
 				resp.Status = STATUS_INVALID;
+			}
 
-			if(!IS_RTC_HOUR24(*(req.Payload + 3)))
+			if(!IS_RTC_HOUR24(*(req.Payload + 3))) {
 				resp.Status = STATUS_INVALID;
+			}
 
-			if(!IS_RTC_MINUTES(*(req.Payload + 4)))
+			if(!IS_RTC_MINUTES(*(req.Payload + 4))) {
 				resp.Status = STATUS_INVALID;
+			}
 
-			if(!IS_RTC_SECONDS(*(req.Payload + 5)))
+			if(!IS_RTC_SECONDS(*(req.Payload + 5))) {
 				resp.Status = STATUS_INVALID;
+			}
 
 			if (resp.Status == STATUS_SUCCESS) {
 				rtc_date.Year 		= req.Payload[0];
@@ -733,7 +758,7 @@ void app_mode_ble_conn_handler(void) {
 	uint8_t curr_ble_state = app_func_ble_curr_state_get();
 
 	app_func_para_data_get((const uint8_t*)HPID_BLE_IDLE_CONNECTION, (uint8_t*)&ble_idle_connection_f, (uint8_t)sizeof(ble_idle_connection_f));
-	ble_idle_connection_f *= 1000.0;
+	ble_idle_connection_f *= MS_PER_SECOND;
 	idle_connection_ms_timer = (int32_t)ble_idle_connection_f;
 	disconnect_request_ms_timer = -1;
 	ble_access_ms_timer = BLE_ACCESS_TIME_MS;

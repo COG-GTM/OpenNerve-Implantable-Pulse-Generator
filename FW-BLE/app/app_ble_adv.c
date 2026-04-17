@@ -36,23 +36,31 @@ NRF_LOG_MODULE_REGISTER();
 #define SLOW_ADV_INTERVAL                   160                                         /**< The advertising interval (in units of 0.625 ms. This value corresponds to 100 ms). */
 #define SLOW_ADV_DURATION                   59000                                       /**< The advertising duration (590 seconds) in units of 10 milliseconds. */
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 BLE_ADVERTISING_DEF(m_advertising);                                                 /**< Advertising module instance. */
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 ble_advertising_t* p_adv = &m_advertising;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static ble_advertising_init_t adv_init;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static ble_uuid_t m_adv_uuids[]          =                                          /**< Universally unique service identifier. */
 {
     {BLE_UUID_NUS_SERVICE, NUS_SERVICE_UUID_TYPE}
 };
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint16_t   m_conn_handle          = BLE_CONN_HANDLE_INVALID;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint8_t manuf_data_data[MAX_ADV_MANUF_DATA_DATA_LEN] = {0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static ble_advdata_manuf_data_t manuf_data = {
     COMPANY_ID, 
     {MAX_ADV_MANUF_DATA_DATA_LEN, (uint8_t*)manuf_data_data}
 };
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static bool adv_enable = false;
 
  /**
@@ -89,7 +97,8 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
             NRF_LOG_DEBUG("BLE_ADV_EVT_WHITELIST_REQUEST");
             ble_gap_addr_t addrs[BLE_GAP_WHITELIST_ADDR_MAX_COUNT];
             ble_gap_irk_t irks[BLE_GAP_WHITELIST_ADDR_MAX_COUNT];
-            uint32_t addr_cnt, irk_cnt;
+            uint32_t addr_cnt = 0;
+            uint32_t irk_cnt = 0;
 
             addr_cnt = BLE_GAP_WHITELIST_ADDR_MAX_COUNT;
             irk_cnt = BLE_GAP_WHITELIST_ADDR_MAX_COUNT;
@@ -180,13 +189,15 @@ void app_ble_adv_start(bool whitelist_enable, uint32_t adv_timeout, uint8_t* p_m
         p_advdata->p_manuf_specific_data->data.size = ma_sp_data_data_len;
         memcpy(p_advdata->p_manuf_specific_data->data.p_data, &p_ma_sp_data[AD_TYPE_MANUF_SPEC_DATA_ID_SIZE], ma_sp_data_data_len);
 
-        if (adv_enable)
+        if (adv_enable) {
             sd_ble_gap_adv_stop(m_advertising.adv_handle);
+        }
 
         APP_ERROR_CHECK(ble_advertising_advdata_update(&m_advertising, p_advdata, p_srdata));
         APP_ERROR_CHECK(ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST));
-        if (!whitelist_enable)
+        if (!whitelist_enable) {
             APP_ERROR_CHECK(ble_advertising_restart_without_whitelist(&m_advertising));
+        }
     }
 }
 
@@ -196,8 +207,9 @@ void app_ble_adv_start(bool whitelist_enable, uint32_t adv_timeout, uint8_t* p_m
  */
 void app_ble_adv_stop(void)
 {
-    if (!adv_enable)
+    if (!adv_enable) {
         return;
+    }
 
     sd_ble_gap_adv_stop(m_advertising.adv_handle);
     APP_ERROR_CHECK(ble_advertising_start(&m_advertising, BLE_ADV_MODE_IDLE));
