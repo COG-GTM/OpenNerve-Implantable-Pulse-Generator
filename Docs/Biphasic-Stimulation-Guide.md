@@ -43,26 +43,32 @@ idle_us = pulsePeriod_us - positiveWidth_us - interphaseGap_us - negativeWidth_u
 The ISR callback (`app_func_stim_biphasic_cb`) implements a four-state machine driven by timer interrupts:
 
 ```
-                 TO_LOW                    TO_LOW
+                TO_HIGH                   TO_HIGH
   POSITIVE  ------------->  GAP  ------------->  NEGATIVE
      ^                (if gap > 0)                  |
      |                                              |
-     |    TO_LOW (skip gap)                    TO_LOW
+     |   TO_HIGH (skip gap)                   TO_HIGH
      |   POSITIVE ---------> NEGATIVE               |
      |                (if gap == 0)                  v
      |                                            IDLE
-     +<-----------------  TO_LOW  -----------------+
+     +<----------------  TO_HIGH  -----------------+
 ```
 
-On each `TO_LOW` interrupt:
-- The timer autoreload and compare registers are reconfigured for the next phase duration
+On each `TO_HIGH` (period elapsed) interrupt:
+- The state machine advances to the next phase
+- The timer autoreload register is reconfigured for the next phase duration
+- The ramp envelope DAC is updated using the *elapsed* phase duration (captured before the state machine modifies ARR)
 - This allows asymmetric positive/negative widths without additional timers
 
-On each `BEFORE_HIGH` interrupt:
+On each `BEFORE_HIGH` (output compare) interrupt:
 - The multiplexer is configured for the upcoming phase:
   - POSITIVE: routes to `sel_positive` (cathodic path)
   - NEGATIVE: routes to `sel_negative` (anodic path)
   - GAP/IDLE: routes to `sel_discharge` (passive discharge)
+- Train on/off timing is evaluated
+
+On each `TO_LOW` (PWM pulse finished) interrupt:
+- Sets multiplexer to discharge (when IMC is not enabled)
 
 ### Train Timing
 
