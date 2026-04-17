@@ -472,7 +472,7 @@ void app_func_stim_circuit_para2_set(Stimulus_Waveform_t stimulus_waveform) {
  * @param imc_en The enabled status of IMC
  */
 void app_func_stim_stim1_start(bool imc_en) {
-	if (pulseWave1.is_running) {
+	if (pulseWave1.is_running || biphasicWave.is_running) {
 		return;
 	}
 
