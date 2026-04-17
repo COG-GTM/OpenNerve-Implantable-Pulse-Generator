@@ -6,9 +6,12 @@
 #include "app_func_authentication.h"
 #include "app_config.h"
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 FW_Image_Packet_t imagePacket = {0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 FW_Image_Info_t image_info = {0};
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static PKA_ECDSAVerifInTypeDef verifIn = {
 		.coef 				= prime256v1_absA,
 		.modulus 			= prime256v1_Prime,
@@ -22,7 +25,9 @@ static const ECC_PublicKey_t PublicKey_Admin = {
 		.PublicKeyQy = APP_ECC_PUBKEY_QY_ADMIN
 };
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static ECDSA_Data_t fw_image_ecdsa_data;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint8_t hash_verify_fail_num = 0;
 
 /**
@@ -128,7 +133,7 @@ bool app_func_auth_compare_flash_hash(uint32_t img_size, uint8_t* img_hash) {
  * @return uint8_t User class
  */
 uint8_t app_func_auth_user_class_get(ECDSA_Data_t ecdsa_data) {
-	ECC_PublicKey_t publickey;
+	ECC_PublicKey_t publickey = {0};
 
 	verifIn.primeOrderSize 	= prime256v1_Order_len;
 	verifIn.modulusSize		= prime256v1_Prime_len;

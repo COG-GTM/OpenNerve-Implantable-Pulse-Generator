@@ -6,10 +6,14 @@
 #include "app_func_command.h"
 #include "app_config.h"
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Cmd_Req_Parser 	curr_cmd_req_parser = NULL;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Cmd_Resp_Parser	curr_cmd_resp_parser = NULL;
 static uint32_t crc_buffer[LEN_CMD_MAX/sizeof(uint32_t)];
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 Cmd_Resp_t 	cmd_resp;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 Cmd_Req_t 	cmd_req;
 
 /**

@@ -9,139 +9,214 @@
 #define FORCED_FACTORY_RESET	false
 #define BYTE_PER_ADDRESS		8U		/*!< The data size of each address in the EEPROM */
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint16_t def_sample_id = 0x0000;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Rawdata_t format_sample_id = {
 		.data_def = (uint8_t*)&def_sample_id,
 		.data_len = (uint8_t)sizeof(def_sample_id),
 };
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint8_t def_ble_passkey[6] = "000000";
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Rawdata_t format_ble_passkey = {
 		.data_def = def_ble_passkey,
 		.data_len = (uint8_t)sizeof(def_ble_passkey),
 };
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint8_t def_ble_whitelist[1] = { 0x01 };
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Rawdata_t format_ble_whitelist = {
 		.data_def = def_ble_whitelist,
 		.data_len = (uint8_t)sizeof(def_ble_whitelist),
 };
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint8_t def_ble_company_id[2] = BLE_COMPANY_ID_RESERVED;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Rawdata_t format_ble_company_id = {
 		.data_def = def_ble_company_id,
 		.data_len = (uint8_t)sizeof(def_ble_company_id),
 };
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint8_t def_ipg_serial_number[8] = "YYLL0001";
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Rawdata_t format_ipg_serial_number = {
 		.data_def = def_ipg_serial_number,
 		.data_len = (uint8_t)sizeof(def_ipg_serial_number),
 };
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint8_t def_ipg_model[5] = "ON-01";
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Rawdata_t format_ipg_model = {
 		.data_def = def_ipg_model,
 		.data_len = (uint8_t)sizeof(def_ipg_model),
 };
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint8_t def_ipg_ble_id[4] = {0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Rawdata_t format_ipg_ble_id = {
 		.data_def = def_ipg_ble_id,
 		.data_len = (uint8_t)sizeof(def_ipg_ble_id),
 };
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint8_t def_ipg_prod_loc[10] = {0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Rawdata_t format_ipg_prod_loc = {
 		.data_def = def_ipg_prod_loc,
 		.data_len = (uint8_t)sizeof(def_ipg_prod_loc),
 };
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint8_t def_ipg_fw_version[6] = APP_FW_VER_STR;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Rawdata_t format_ipg_fw_version = {
 		.data_def = def_ipg_fw_version,
 		.data_len = (uint8_t)sizeof(def_ipg_fw_version),
 };
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint8_t def_link_fw_version[6]	= "1.0.00";
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Rawdata_t format_link_fw_version = {
 		.data_def = def_link_fw_version,
 		.data_len = (uint8_t)sizeof(def_link_fw_version),
 };
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint8_t def_ipg_manuf_date[10] = "YYYY-MM-DD";
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Rawdata_t format_ipg_manuf_date = {
 		.data_def = def_ipg_manuf_date,
 		.data_len = (uint8_t)sizeof(def_ipg_manuf_date),
 };
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint8_t def_ipg_impla_date[10] = "YYYY-MM-DD";
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Rawdata_t format_ipg_impla_date = {
 		.data_def = def_ipg_impla_date,
 		.data_len = (uint8_t)sizeof(def_ipg_impla_date),
 };
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static ECC_PublicKey_t PublicKey_Clinician = { APP_ECC_PUBKEY_QX_CLINICIAN, APP_ECC_PUBKEY_QY_CLINICIAN };
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Rawdata_t format_PublicKey_Clinician = {
 		.data_def = (uint8_t*)&PublicKey_Clinician,
 		.data_len = (uint8_t)sizeof(PublicKey_Clinician),
 };
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static ECC_PublicKey_t PublicKey_Patient = { APP_ECC_PUBKEY_QX_PATIENT, APP_ECC_PUBKEY_QY_PATIENT };
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Rawdata_t format_PublicKey_Patient = {
 		.data_def = (uint8_t*)&PublicKey_Patient,
 		.data_len = (uint8_t)sizeof(PublicKey_Patient),
 };
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_ble_broadcast_timeout 	= {10.0, 	600.0, 	119.0, 	10.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_ble_idle_connection 		= {10.0, 	600.0, 	300.0, 	10.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_ble_disconnect_request 	= {10.0, 	600.0, 	10.0, 	10.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_ble_interval 			= {1.0, 	600.0, 	60.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_impedance_test_interval 	= {1.0, 	96.0, 	1.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_battery_test_interval 	= {1.0, 	96.0, 	1.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_magnet_wakeup_min_time 	= {1.0, 	60.0, 	2.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_magnet_wakeup_max_time 	= {1.0, 	60.0, 	6.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_magnet_reset_min_time 	= {1.0, 	60.0, 	9.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_magnet_reset_max_time 	= {1.0, 	60.0, 	13.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_battery_er_level 		= {2.0, 	4.0, 	3.3, 	0.1};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_battery_eos_level 		= {2.0, 	4.0, 	3.2, 	0.1};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_language 				= {1.0, 	4.0, 	1.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_idle_duration 			= {1.0, 	600.0, 	1.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_rtc_interrupt_period 	= {60.0, 	60.0, 	60.0, 	1.0};
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_num_of_therapy_sessions	= {1.0, 	6.0, 	3.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_pulse_amplitude			= {0.2, 	5.0, 	0.2, 	0.1};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_pulse_width				= {100.0, 	1000.0,	500.0, 	50.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_pulse_frequency			= {1.0, 	2000.0, 5.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_ramp_up_duration			= {0.0, 	10.0, 	2.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_ramp_down_duration		= {0.0, 	10.0, 	2.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_train_on_duration		= {10.0, 	300.0, 	10.0, 	10.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_train_off_duration		= {0.0, 	300.0, 	90.0, 	10.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_sns_cathode_electrode_number	= {1.0, 	5.0, 	1.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_sns_anode_electrode_number	= {1.0, 	5.0, 	2.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_vns_cathode_electrode_number	= {1.0, 	5.0, 	1.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_vns_anode_electrode_number	= {1.0, 	5.0, 	2.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_max_safe_amplitude		= {0.5, 	5.0, 	0.5, 	0.1};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_min_safe_impedance		= {100.0, 	600.0, 	450.0, 	10.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_sine_amplitude			= {0.1, 	2.0, 	1.0, 	0.05};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_max_safe_sine_amplitude	= {2.0, 	2.0, 	2.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_sine_frequency			= {0.5, 	15.0, 	2.5, 	0.1};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_vnsb_on_duration			= {1.0, 	600.0, 	10.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_vnsb_off_duration		= {0.0, 	600.0, 	10.0, 	1.0};
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_therapy_session_1_start	= {0.0, 	1438.0, 480.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_therapy_session_1_stop	= {1.0, 	1439.0, 510.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_therapy_session_2_start	= {0.0, 	1438.0, 480.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_therapy_session_2_stop	= {1.0, 	1439.0, 510.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_therapy_session_3_start	= {0.0, 	1438.0, 480.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_therapy_session_3_stop	= {1.0, 	1439.0, 510.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_therapy_session_4_start	= {0.0, 	1438.0, 480.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_therapy_session_4_stop	= {1.0, 	1439.0, 510.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_therapy_session_5_start	= {0.0, 	1438.0, 480.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_therapy_session_5_stop	= {1.0, 	1439.0, 510.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_therapy_session_6_start	= {0.0, 	1438.0, 480.0, 	1.0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Parameter_Format_Value_t format_therapy_session_6_stop	= {1.0, 	1439.0, 510.0, 	1.0};
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 Parameter_t parameters_list[] = {
 		{TPID_SAMPLE_ID, 					0U, {&format_sample_id, 			NULL}},
 
@@ -224,6 +299,7 @@ const uint16_t parameters_list_size = (uint16_t)(sizeof(parameters_list) / sizeo
  * @param datalen Parameter data length
  * @return uint16_t Next EEPROM virtual address
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 static uint16_t app_func_para_write (uint16_t virtAddress, const uint8_t* p_id, const uint8_t* p_data, uint8_t datalen) {
 	uint16_t addr = virtAddress;
 	Parameter_Data96bits_t data;
@@ -266,6 +342,7 @@ static uint16_t app_func_para_write (uint16_t virtAddress, const uint8_t* p_id, 
  * @param datalen Parameter data length
  * @return uint16_t Next EEPROM virtual address
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 static uint16_t app_func_para_read (uint16_t virtAddress, uint8_t* p_id, uint8_t* p_data, uint8_t datalen) {
 	uint16_t addr = virtAddress;
 	Parameter_Data96bits_t data = {
@@ -323,6 +400,7 @@ static Parameter_t* app_func_para_get(const uint8_t* p_id) {
  * @brief Parameter buffer initialization
  * 
  */
+/* NOLINTNEXTLINE(readability-function-cognitive-complexity) */
 void app_func_para_init (void) {
     uint32_t pid = 0;
     uint16_t fw_elements = 0;
@@ -371,8 +449,9 @@ void app_func_para_init (void) {
 		}
 	}
 
-	if (FORCED_FACTORY_RESET)
+	if (FORCED_FACTORY_RESET) {
 		fw_elements = ee_elements + 1;
+	}
 
 	if (((virtAddr == 1U) && (ee_status == EE_NO_DATA)) || (memcmp(&fw_id_crc, &ee_id_crc, sizeof(uint16_t)) != 0) || (fw_elements != ee_elements)) {
 	    ee_status = EE_Format(EE_FORCED_ERASE);

@@ -15,6 +15,7 @@
  * @param data_len The length of data written.
  * @return uint16_t The length of the SPI frame
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 uint16_t CY15B108QN_write_spi_frame_get(uint8_t* p_buffer, uint32_t addr, const uint8_t* p_data, uint16_t data_len) {
 	uint16_t len = 0U;
 	if ((p_buffer != NULL) && (addr <= CY15B108QN_MAX_ADDR) && (p_data != NULL) && (data_len > 0U)) {

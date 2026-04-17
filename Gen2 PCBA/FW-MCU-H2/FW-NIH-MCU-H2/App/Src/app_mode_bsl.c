@@ -13,7 +13,7 @@
  * 
  */
 void app_mode_bsl_handler(void) {
-	FLASH_OBProgramInitTypeDef OBInit;
+	FLASH_OBProgramInitTypeDef OBInit = {0};
     HAL_FLASHEx_OBGetConfig(&OBInit);
 
 	FLASH_EraseInitTypeDef EraseInitStruct = {
