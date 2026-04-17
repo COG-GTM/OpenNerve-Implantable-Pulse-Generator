@@ -113,14 +113,15 @@ Sets all biphasic stimulation parameters in a single command.
 | Byte Offset | Field | Type | Description |
 |---|---|---|---|
 | 0 | Opcode | uint8 | `0x4C` |
-| 1 | PayloadLen | uint8 | `24` |
+| 1 | PayloadLen | uint8 | `28` |
 | 2-5 | cathodic_width | uint32_t | Cathodic phase width in microseconds |
 | 6-9 | anodic_width | uint32_t | Anodic phase width in microseconds |
 | 10-13 | interphase_gap | uint32_t | Interphase gap in microseconds |
 | 14-17 | pulse_period | uint32_t | Pulse period in microseconds (= 1,000,000 / frequency) |
-| 18-21 | train_on | uint32_t | Train on duration in seconds |
-| 22-25 | train_off | uint32_t | Train off duration in seconds |
-| 26-27 | CRC16 | uint16_t | CRC-16 over bytes 0-25 |
+| 18-21 | amplitude | uint32_t | Current amplitude in microamps (e.g. 500 = 0.5 mA) |
+| 22-25 | train_on | uint32_t | Train on duration in seconds |
+| 26-29 | train_off | uint32_t | Train off duration in seconds |
+| 30-31 | CRC16 | uint16_t | CRC-16 over bytes 0-29 |
 
 **Response:**
 
@@ -135,17 +136,19 @@ Sets all biphasic stimulation parameters in a single command.
 - `STATUS_SUCCESS` — Parameters accepted and stored
 - `STATUS_INVALID` — One or more parameters out of range; no parameters were changed
 
-**Example — set 30 Hz, 200/200 us, 50 us gap, 30s on / 60s off:**
+**Example — set 30 Hz, 200/200 us, 50 us gap, 0.5 mA, 30s on / 60s off:**
 
 ```csharp
 // pulse_period for 30 Hz = 1,000,000 / 30 = 33,333 us
-byte[] payload = new byte[24];
+// amplitude in microamps: 0.5 mA = 500 uA
+byte[] payload = new byte[28];
 BitConverter.GetBytes((uint)200).CopyTo(payload, 0);      // cathodic_width
 BitConverter.GetBytes((uint)200).CopyTo(payload, 4);      // anodic_width
 BitConverter.GetBytes((uint)50).CopyTo(payload, 8);       // interphase_gap
 BitConverter.GetBytes((uint)33333).CopyTo(payload, 12);   // pulse_period
-BitConverter.GetBytes((uint)30).CopyTo(payload, 16);      // train_on
-BitConverter.GetBytes((uint)60).CopyTo(payload, 20);      // train_off
+BitConverter.GetBytes((uint)500).CopyTo(payload, 16);     // amplitude (0.5 mA)
+BitConverter.GetBytes((uint)30).CopyTo(payload, 20);      // train_on
+BitConverter.GetBytes((uint)60).CopyTo(payload, 24);      // train_off
 SendCommand(0x4C, payload);
 ```
 
@@ -168,15 +171,16 @@ Reads the current biphasic stimulation parameters.
 | Byte Offset | Field | Type | Description |
 |---|---|---|---|
 | 0 | Opcode | uint8 | `0x4D` |
-| 1 | PayloadLen | uint8 | `24` |
+| 1 | PayloadLen | uint8 | `28` |
 | 2 | Status | uint8 | `STATUS_SUCCESS` |
 | 3-6 | cathodic_width | uint32_t | Cathodic phase width in microseconds |
 | 7-10 | anodic_width | uint32_t | Anodic phase width in microseconds |
 | 11-14 | interphase_gap | uint32_t | Interphase gap in microseconds |
 | 15-18 | pulse_period | uint32_t | Pulse period in microseconds |
-| 19-22 | train_on | uint32_t | Train on duration in seconds |
-| 23-26 | train_off | uint32_t | Train off duration in seconds |
-| 27-28 | CRC16 | uint16_t | CRC-16 |
+| 19-22 | amplitude | uint32_t | Current amplitude in microamps |
+| 23-26 | train_on | uint32_t | Train on duration in seconds |
+| 27-30 | train_off | uint32_t | Train off duration in seconds |
+| 31-32 | CRC16 | uint16_t | CRC-16 |
 
 **Example:**
 
@@ -186,11 +190,13 @@ uint cathodicWidth  = BitConverter.ToUInt32(resp.Payload, 0);
 uint anodicWidth    = BitConverter.ToUInt32(resp.Payload, 4);
 uint interphaseGap  = BitConverter.ToUInt32(resp.Payload, 8);
 uint pulsePeriod    = BitConverter.ToUInt32(resp.Payload, 12);
-uint trainOn        = BitConverter.ToUInt32(resp.Payload, 16);
-uint trainOff       = BitConverter.ToUInt32(resp.Payload, 20);
+uint amplitude      = BitConverter.ToUInt32(resp.Payload, 16);
+uint trainOn        = BitConverter.ToUInt32(resp.Payload, 20);
+uint trainOff       = BitConverter.ToUInt32(resp.Payload, 24);
 
 double frequency = 1_000_000.0 / pulsePeriod;
-Console.WriteLine($"Biphasic: {cathodicWidth}/{anodicWidth} us, gap={interphaseGap} us, freq={frequency:F1} Hz");
+double amp_mA = amplitude / 1000.0;
+Console.WriteLine($"Biphasic: {cathodicWidth}/{anodicWidth} us, gap={interphaseGap} us, freq={frequency:F1} Hz, amp={amp_mA:F1} mA");
 Console.WriteLine($"Train: {trainOn}s on / {trainOff}s off");
 ```
 
@@ -286,13 +292,14 @@ To monitor electrode impedance during stimulation, enable impedance monitoring w
 
 ```csharp
 // Set biphasic parameters first
-byte[] payload = new byte[24];
+byte[] payload = new byte[28];
 BitConverter.GetBytes((uint)200).CopyTo(payload, 0);      // cathodic_width = 200 us
 BitConverter.GetBytes((uint)200).CopyTo(payload, 4);      // anodic_width = 200 us
 BitConverter.GetBytes((uint)50).CopyTo(payload, 8);       // interphase_gap = 50 us
 BitConverter.GetBytes((uint)33333).CopyTo(payload, 12);   // 30 Hz
-BitConverter.GetBytes((uint)30).CopyTo(payload, 16);      // train_on = 30 s
-BitConverter.GetBytes((uint)60).CopyTo(payload, 20);      // train_off = 60 s
+BitConverter.GetBytes((uint)500).CopyTo(payload, 16);     // amplitude = 0.5 mA (500 uA)
+BitConverter.GetBytes((uint)30).CopyTo(payload, 20);      // train_on = 30 s
+BitConverter.GetBytes((uint)60).CopyTo(payload, 24);      // train_off = 60 s
 SendCommand(0x4C, payload);
 
 // Enable biphasic stimulation WITH impedance monitoring
