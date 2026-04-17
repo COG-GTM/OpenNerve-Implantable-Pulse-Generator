@@ -8,19 +8,35 @@
 
 #include "stm32u5xx_ll_tim.h"
 
-#define	BER_HI_TIME_US	10
-#define	ZERO_HOLD		0.0
+#define	BER_HI_TIME_US				10
+#define	ZERO_HOLD					0.0
 
+#define STIM_MA_TO_A_DIVISOR			1000.0		/*!< mA to A conversion divisor */
+#define STIM_V_TO_MV_MULTIPLIER			1000.0		/*!< V to mV conversion multiplier */
+#define NEWTON_MAX_ITERATIONS			20			/*!< Max Newton-Raphson iterations for iout_to_dac */
+#define NEWTON_CONVERGENCE_THRESHOLD	1e-12		/*!< Newton-Raphson convergence threshold */
+#define PULSE_HALF_PERIOD_DIVISOR		2U			/*!< Divisor for computing half the pulse period */
+#define MS_TO_US_MULTIPLIER				1000U		/*!< Milliseconds to microseconds conversion */
+#define RAMP_QUARTER_PERIOD_MULT		4U			/*!< Quarter-period multiplier for ramp sine generation */
+
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 PulseWave_t pulseWave1 = {0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 PulseWave_t pulseWave2 = {0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 SineWave_t sineWave = {0};
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 Stim_Sel_t stimSel = {0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 Current_Sources_t srcSnk = {0};
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 uint16_t ramp_amplitude = 0;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static DAC8050x_format_t dac_write = {0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static DAC8050x_format_t dac_read = {0};
 
 /**
@@ -32,9 +48,11 @@ static DAC8050x_format_t dac_read = {0};
  *
  * @return The sine wave value at the given point, scaled by the amplitude.
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 static _Float64 generate_sine_wave(uint32_t total_points, uint32_t point, _Float64 amplitude) {
-    if (point > total_points)
+    if (point > total_points) {
     	return 0.0;
+    }
 
     if (ZERO_HOLD == 0.0) {
     	_Float64 angle = (2.0 * M_PI * point) / total_points;
@@ -45,17 +63,19 @@ static _Float64 generate_sine_wave(uint32_t total_points, uint32_t point, _Float
 		uint32_t zero_hold_points = (uint32_t)(ZERO_HOLD * half_points);
 		uint32_t pos_in_half = point % half_points;
 
-		if (pos_in_half < zero_hold_points)
+		if (pos_in_half < zero_hold_points) {
 			return 0.0;
+		}
 
 		_Float64 effective_points = (half_points - zero_hold_points);
 		_Float64 phase = (pos_in_half - zero_hold_points) / effective_points;
 		_Float64 angle = M_PI * phase;
 
-		if (point < half_points)
+		if (point < half_points) {
 			return amplitude * sin(angle);
-		else
+		} else {
 			return -amplitude * sin(angle);
+		}
     }
 }
 
@@ -128,6 +148,7 @@ static void sel_ch_snk_set(Stim_Sel_Ch_t change, bool connect) {
  * @param newState New state of U1500 and U1501 channels
  * @param change Whether to change the state of U1500 and U1501 channels
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 static void sel_ch_set(Stim_Sel_Ch_t newState, Stim_Sel_Ch_t change) {
 	if (change.ch1) {
 		HAL_GPIO_WritePin(STIM_SEL_CH1n_GPIO_Port, STIM_SEL_CH1n_Pin, (newState.ch1)?GPIO_PIN_RESET:GPIO_PIN_SET); /* parasoft-suppress MISRAC2012-RULE_11_4-a "This definition comes from HAL." */
@@ -157,6 +178,7 @@ static void sel_ch_set(Stim_Sel_Ch_t newState, Stim_Sel_Ch_t change) {
  * @param newState New state of U1500 and U1501 channels
  * @param change Whether to change the state of U1500 and U1501 channels
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 static void sel_ch_srcsnk_set(Stim_Sel_Ch_t newState, Stim_Sel_Ch_t change) {
 	sel_ch_src_set(change, false);
 	sel_ch_snk_set(change, false);
@@ -173,6 +195,7 @@ static void sel_ch_srcsnk_set(Stim_Sel_Ch_t newState, Stim_Sel_Ch_t change) {
  * @param newState New state of U1500 and U1501 channels
  * @param change Whether to change the state of U1500 and U1501 channels.
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 static void imp_sel_set(Stim_Sel_Ch_t newState, Stim_Sel_Ch_t change) {
 	uint8_t snkN_select = 0xFF;
 	bool imp_n_sel0 = false;
@@ -210,6 +233,7 @@ static void imp_sel_set(Stim_Sel_Ch_t newState, Stim_Sel_Ch_t change) {
  * @param turnon Set the state of pin "HVSW_EN"
  * @param enable Set the state of pins "VPPSW_EN" and "HV_EN"
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 void app_func_stim_hv_supply_set(bool turnon, bool enable) {
 	HAL_GPIO_WritePin(HVSW_EN_GPIO_Port, HVSW_EN_Pin, (turnon)?GPIO_PIN_SET:GPIO_PIN_RESET); /* parasoft-suppress MISRAC2012-RULE_11_4-a "This definition comes from HAL." */
 	HAL_Delay(10);
@@ -280,6 +304,7 @@ uint8_t app_func_stim_dac_init(void) {
  * @param voltageB_mv The voltage of VOUTB, unit: mV
  * @return uint8_t HAL status
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 uint8_t app_func_stim_dac_volt_set(uint16_t voltageA_mv, uint16_t voltageB_mv) {
 	uint16_t data = 0U;
 	uint8_t err = 0;
@@ -314,9 +339,10 @@ uint8_t app_func_stim_dac_volt_set(uint16_t voltageA_mv, uint16_t voltageB_mv) {
  * @param ramp_down_duration_ms The duration of the ramp down, unit: ms
  * @param voltage_mv The max voltage of VOUTA, unit: mV
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 void app_func_stim_dac1_ramp_set(uint32_t ramp_up_duration_ms, uint32_t ramp_down_duration_ms, uint16_t voltage_mv) {
-	pulseWave1.ramp.rampUpDuration_us 	= ramp_up_duration_ms * 1000;
-	pulseWave1.ramp.rampDownDuration_us = ramp_down_duration_ms * 1000;
+	pulseWave1.ramp.rampUpDuration_us 	= ramp_up_duration_ms * MS_TO_US_MULTIPLIER;
+	pulseWave1.ramp.rampDownDuration_us = ramp_down_duration_ms * MS_TO_US_MULTIPLIER;
 	pulseWave1.ramp.max_amplitude_mV 	= voltage_mv;
 	pulseWave1.ramp.curr_amplitude_mV 	= 0;
 
@@ -336,25 +362,25 @@ void app_func_stim_dac1_ramp_set(uint32_t ramp_up_duration_ms, uint32_t ramp_dow
  */
 _Float64 app_func_stim_iout_to_dac(_Float64 iout_mA)
 {
-	_Float64 iout_target = iout_mA / 1000.0f;
-    if (iout_target <= 0.0f)
-    	return 0.0f;
+	_Float64 iout_target = iout_mA / STIM_MA_TO_A_DIVISOR;
+    if (iout_target <= 0.0)
+    	return 0.0;
 
     _Float64 vdac = iout_target * (BSP_MIRROR_ROUT / BSP_MIRROR_RREF) * BSP_STIM_RREF;
 
-    for (int iter = 0; iter < 20; iter++) {
+    for (int iter = 0; iter < NEWTON_MAX_ITERATIONS; iter++) {
     	_Float64 iref = 1.0 / BSP_STIM_RREF * vdac;
-    	_Float64 f = iout_target * BSP_MIRROR_ROUT - BSP_VT * logf(iref / iout_target) - iref * BSP_MIRROR_RREF;
+    	_Float64 f = iout_target * BSP_MIRROR_ROUT - BSP_VT * logf((float)(iref / iout_target)) - iref * BSP_MIRROR_RREF;
     	_Float64 df = -BSP_VT / vdac - 1.0 / BSP_STIM_RREF * BSP_MIRROR_RREF;
 
     	_Float64 delta = f / df;
         vdac -= delta;
 
-        if (fabsf(delta) < 1e-12f)
+        if (fabsf((float)delta) < (float)NEWTON_CONVERGENCE_THRESHOLD)
         	break;
 
-        if (vdac <= 0.0f) {
-            vdac = 0.0f;
+        if (vdac <= 0.0) {
+            vdac = 0.0;
             break;
         }
     }
@@ -362,7 +388,7 @@ _Float64 app_func_stim_iout_to_dac(_Float64 iout_mA)
     if (vdac > BSP_DAC80502_VREF)
         vdac = BSP_DAC80502_VREF;
 
-    return (vdac * 1000.0f);
+    return (vdac * STIM_V_TO_MV_MULTIPLIER);
 }
 
 /**
@@ -434,10 +460,10 @@ void app_func_stim_curr_src_set(Current_Sources_t current_sources) {
  */
 void app_func_stim_circuit_para1_set(Stimulus_Waveform_t stimulus_waveform) {
 	pulseWave1.pwm_pulse_width_us = stimulus_waveform.pulseWidth_us;
-	pulseWave1.pwm_period_us = stimulus_waveform.pulsePeriod_us / 2;
+	pulseWave1.pwm_period_us = stimulus_waveform.pulsePeriod_us / PULSE_HALF_PERIOD_DIVISOR;
 
-	pulseWave1.train_period_us = (stimulus_waveform.trainOnDuration_ms + stimulus_waveform.trainOffDuration_ms) * 1000;
-	pulseWave1.train_on_duration_us = stimulus_waveform.trainOnDuration_ms * 1000;
+	pulseWave1.train_period_us = (stimulus_waveform.trainOnDuration_ms + stimulus_waveform.trainOffDuration_ms) * MS_TO_US_MULTIPLIER;
+	pulseWave1.train_on_duration_us = stimulus_waveform.trainOnDuration_ms * MS_TO_US_MULTIPLIER;
 
 	if (pulseWave1.is_running) {
 		__HAL_TIM_SET_AUTORELOAD(&HANDLE_PULSE1_TIM, pulseWave1.pwm_period_us - 1);
@@ -453,10 +479,10 @@ void app_func_stim_circuit_para1_set(Stimulus_Waveform_t stimulus_waveform) {
  */
 void app_func_stim_circuit_para2_set(Stimulus_Waveform_t stimulus_waveform) {
 	pulseWave2.pwm_pulse_width_us = stimulus_waveform.pulseWidth_us;
-	pulseWave2.pwm_period_us = stimulus_waveform.pulsePeriod_us / 2;
+	pulseWave2.pwm_period_us = stimulus_waveform.pulsePeriod_us / PULSE_HALF_PERIOD_DIVISOR;
 
-	pulseWave2.train_period_us = (stimulus_waveform.trainOnDuration_ms + stimulus_waveform.trainOffDuration_ms) * 1000;
-	pulseWave2.train_on_duration_us = stimulus_waveform.trainOnDuration_ms * 1000;
+	pulseWave2.train_period_us = (stimulus_waveform.trainOnDuration_ms + stimulus_waveform.trainOffDuration_ms) * MS_TO_US_MULTIPLIER;
+	pulseWave2.train_on_duration_us = stimulus_waveform.trainOnDuration_ms * MS_TO_US_MULTIPLIER;
 
 	if (pulseWave2.is_running) {
 		__HAL_TIM_SET_AUTORELOAD(&HANDLE_PULSE2_TIM, pulseWave2.pwm_period_us - 1);
@@ -652,7 +678,7 @@ void app_func_stim_stim1_cb(PWM_InterruptState state) {
 		}
 	}
 	else if (state == TO_HIGH) {
-
+		/* TODO: verify intended behavior — branch is intentionally empty */
 	}
 	else if (state == TO_LOW) {
 		if (!pulseWave1.imc_is_enabled) {
@@ -666,14 +692,14 @@ void app_func_stim_stim1_cb(PWM_InterruptState state) {
 
 			if (pulseWave1.ramp.timer_us >= pulseWave1.ramp.rampUpStart_us && pulseWave1.ramp.timer_us < pulseWave1.ramp.rampUpEnd_us) {
 				uint32_t sine_timer = pulseWave1.ramp.timer_us;
-				ramp_amplitude = (uint16_t)generate_sine_wave(pulseWave1.ramp.rampUpDuration_us * 4, sine_timer, (_Float64)pulseWave1.ramp.max_amplitude_mV);
+				ramp_amplitude = (uint16_t)generate_sine_wave(pulseWave1.ramp.rampUpDuration_us * RAMP_QUARTER_PERIOD_MULT, sine_timer, (_Float64)pulseWave1.ramp.max_amplitude_mV);
 			}
 			else if (pulseWave1.ramp.timer_us >= pulseWave1.ramp.rampUpEnd_us && pulseWave1.ramp.timer_us < pulseWave1.ramp.rampDownStart_us) {
 				ramp_amplitude = pulseWave1.ramp.max_amplitude_mV;
 			}
 			else if (pulseWave1.ramp.timer_us >= pulseWave1.ramp.rampDownStart_us && pulseWave1.ramp.timer_us < pulseWave1.ramp.rampDownEnd_us) {
 				uint32_t sine_timer = pulseWave1.ramp.timer_us - pulseWave1.ramp.rampDownStart_us + pulseWave1.ramp.rampDownDuration_us;
-				ramp_amplitude = (uint16_t)generate_sine_wave(pulseWave1.ramp.rampDownDuration_us * 4, sine_timer, (_Float64)pulseWave1.ramp.max_amplitude_mV);
+				ramp_amplitude = (uint16_t)generate_sine_wave(pulseWave1.ramp.rampDownDuration_us * RAMP_QUARTER_PERIOD_MULT, sine_timer, (_Float64)pulseWave1.ramp.max_amplitude_mV);
 			}
 			else {
 				ramp_amplitude = 0;
@@ -734,8 +760,8 @@ void app_func_stim_sine_para_set(NerveBlock_Waveform_t nerveBlock_waveform) {
 	sineWave.phaseShift_us		= nerveBlock_waveform.sinePhaseShift_us % nerveBlock_waveform.sinePeriod_us;
 	sineWave.amplitude_mV 		= nerveBlock_waveform.amplitude_mV;
 
-	sineWave.train_period_us = (nerveBlock_waveform.trainOnDuration_ms + nerveBlock_waveform.trainOffDuration_ms) * 1000;
-	sineWave.train_on_duration_us = nerveBlock_waveform.trainOnDuration_ms * 1000;
+	sineWave.train_period_us = (nerveBlock_waveform.trainOnDuration_ms + nerveBlock_waveform.trainOffDuration_ms) * MS_TO_US_MULTIPLIER;
+	sineWave.train_on_duration_us = nerveBlock_waveform.trainOnDuration_ms * MS_TO_US_MULTIPLIER;
 
 	sineWave.sine_point_idx = (sineWave.phaseShift_us % sineWave.period_us) / sineWave.update_interval_us + 1U;
 	sineWave.sine_point_idx = sineWave.sine_point_idx % SINE_PERIOD_POINTS;

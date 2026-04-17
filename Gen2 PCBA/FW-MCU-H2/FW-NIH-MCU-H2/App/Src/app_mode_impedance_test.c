@@ -6,22 +6,31 @@
 #include "app_mode_impedance_test.h"
 #include "app_config.h"
 
-#define IMP_MEAS_HV_SUPPLY_MV	4200U
-#define	IMP_MEAS_SAMPLE_FQ_HZ	50000U
+#define IMP_MEAS_HV_SUPPLY_MV		4200U
+#define	IMP_MEAS_SAMPLE_FQ_HZ		50000U
+#define	IMP_MEAS_PULSE_WIDTH_US		500U		/*!< Impedance measurement pulse width, unit: us */
+#define	IMP_MEAS_PULSE_PERIOD_US	10000U		/*!< Impedance measurement pulse period, unit: us */
+#define	IMP_MEAS_TRAIN_ON_MS		200U		/*!< Impedance measurement train-on duration, unit: ms */
+#define	IMP_SETTLE_DELAY_MS			100U		/*!< Hardware settle time delay, unit: ms */
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Stimulus_Waveform_t parameters = {
-		.pulseWidth_us 			= 500,
-		.pulsePeriod_us 		= 10000,
-		.trainOnDuration_ms 	= 200,
+		.pulseWidth_us 			= IMP_MEAS_PULSE_WIDTH_US,
+		.pulsePeriod_us 		= IMP_MEAS_PULSE_PERIOD_US,
+		.trainOnDuration_ms 	= IMP_MEAS_TRAIN_ON_MS,
 		.trainOffDuration_ms	= 0,
 };
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint16_t impVoltageBufferA[ADC_MAX_SAMPLE_POINTS];
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint16_t impVoltageBufferB[ADC_MAX_SAMPLE_POINTS];
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static _Float64 impVoltage;
 
 #ifdef SWV_TRACE
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint16_t swvTrace = 0;
 #endif
 
@@ -132,7 +141,7 @@ _Float64 app_mode_impedance_test_get(void) {
 
 	bsp_wdg_refresh();
 	app_func_stim_off();
-	HAL_Delay(100);
+	HAL_Delay(IMP_SETTLE_DELAY_MS);
 
 	app_func_stim_curr_src_set(configuration);
 	app_func_stim_circuit_para1_set(parameters);
@@ -140,7 +149,7 @@ _Float64 app_mode_impedance_test_get(void) {
 	app_func_stim_hv_supply_set(true, true);
 	HAL_ERROR_CHECK(app_func_stim_hv_sup_volt_set((uint16_t)IMP_MEAS_HV_SUPPLY_MV));
 	app_func_stim_vdds_sup_enable(true);
-	HAL_Delay(100);
+	HAL_Delay(IMP_SETTLE_DELAY_MS);
 
 	HAL_ERROR_CHECK(app_func_stim_dac_init());
 	HAL_ERROR_CHECK(app_func_stim_dac_volt_set(dacVoltage_mv, 0));
@@ -151,7 +160,7 @@ _Float64 app_mode_impedance_test_get(void) {
 	app_func_meas_imp_sel_set(imp_n_sel0, imp_n_sel1, imp_n_sel2, imp_p_sel);
 	app_func_meas_imp_enable(true);
 
-	HAL_Delay(100);
+	HAL_Delay(IMP_SETTLE_DELAY_MS);
 	bsp_wdg_refresh();
 
 	app_func_stim_mux_enable(true);

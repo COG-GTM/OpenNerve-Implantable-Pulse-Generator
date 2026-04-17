@@ -6,8 +6,17 @@
 #include "app_mode_therapy_session.h"
 #include "app_config.h"
 
+#define S_TO_US_MULTIPLIER			1000000.0	/*!< Seconds to microseconds conversion factor */
+#define S_TO_MS_MULTIPLIER			1000.0		/*!< Seconds to milliseconds conversion factor */
+#define S_TO_MS_MULTIPLIER_INT		1000U		/*!< Seconds to milliseconds conversion factor (integer) */
+#define PULSE_HALF_PERIOD_FACTOR	2.0			/*!< Divisor for computing half the pulse period */
+#define SINE_PHASE_SHIFT_RATIO		0.15		/*!< Sine wave phase shift as fraction of period */
+#define THERAPY_SETTLE_DELAY_MS		100U		/*!< Hardware settle time delay, unit: ms */
+
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static bool therapy_session_status = false;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 bool vnsb_en = false;
 
 /**
@@ -16,6 +25,7 @@ bool vnsb_en = false;
  * @return true There is no short circuit event and then therapy session start
  * @return false A short circuit event exists, so therapy session is stopped
  */
+/* NOLINTNEXTLINE(readability-function-cognitive-complexity) */
 bool app_mode_therapy_start(void) {
 	therapy_session_status = false;
 	if (!app_func_logs_event_search(EVENT_SHORT_CIRCUIT)) {
@@ -58,8 +68,8 @@ bool app_mode_therapy_start(void) {
 		}
 		uint16_t pulseDacVoltage_mv = (uint16_t)app_func_stim_iout_to_dac(pulse_amplitude_mA);
 
-		_Float64 pulse_period_us = 1.0 / pulse_frequency_hz * 1000000.0;
-		_Float64 max_pulse_width_us = pulse_period_us / 2.0;
+		_Float64 pulse_period_us = 1.0 / pulse_frequency_hz * S_TO_US_MULTIPLIER;
+		_Float64 max_pulse_width_us = pulse_period_us / PULSE_HALF_PERIOD_FACTOR;
 		if (pulse_width_us > max_pulse_width_us) {
 			pulse_width_us = max_pulse_width_us;
 			app_func_para_data_set((const uint8_t*)SPID_PULSE_WIDTH, (uint8_t*)&pulse_width_us);
@@ -68,12 +78,12 @@ bool app_mode_therapy_start(void) {
 		Stimulus_Waveform_t parameters = {
 				.pulseWidth_us 			= (uint32_t)pulse_width_us,
 				.pulsePeriod_us 		= (uint32_t)pulse_period_us,
-				.trainOnDuration_ms 	= (uint32_t)(train_on_duration_s * 1000.0),
-				.trainOffDuration_ms	= (uint32_t)(train_off_duration_s * 1000.0),
+				.trainOnDuration_ms 	= (uint32_t)(train_on_duration_s * S_TO_MS_MULTIPLIER),
+				.trainOffDuration_ms	= (uint32_t)(train_off_duration_s * S_TO_MS_MULTIPLIER),
 		};
 
-		uint32_t rampUpDuration_ms = (uint32_t)(ramp_up_duration_s * 1000.0);
-		uint32_t rampDownDuration_ms = (uint32_t)(ramp_down_duration_s * 1000.0);
+		uint32_t rampUpDuration_ms = (uint32_t)(ramp_up_duration_s * S_TO_MS_MULTIPLIER);
+		uint32_t rampDownDuration_ms = (uint32_t)(ramp_down_duration_s * S_TO_MS_MULTIPLIER);
 
 		if (sine_amplitude_mA > max_safe_sine_amplitude_mA) {
 			sine_amplitude_mA = max_safe_sine_amplitude_mA;
@@ -81,14 +91,14 @@ bool app_mode_therapy_start(void) {
 		}
 		uint16_t sineDacVoltage_mv = (uint16_t)app_func_stim_iout_to_dac(sine_amplitude_mA);
 
-		_Float64 sine_period_us = 1000000.0 / sine_frequency_hz;
-		_Float64 sine_phase_shift_us = sine_period_us * 0.15 + pulse_period_us;
+		_Float64 sine_period_us = S_TO_US_MULTIPLIER / sine_frequency_hz;
+		_Float64 sine_phase_shift_us = sine_period_us * SINE_PHASE_SHIFT_RATIO + pulse_period_us;
 		NerveBlock_Waveform_t sine_para = {
 				.sinePeriod_us			= (uint32_t)sine_period_us,
 				.sinePhaseShift_us		= (uint32_t)sine_phase_shift_us,
 				.amplitude_mV 			= sineDacVoltage_mv,
-				.trainOnDuration_ms 	= (uint32_t)(vnsb_on_duration_s * 1000),
-				.trainOffDuration_ms 	= (uint32_t)(vnsb_off_duration_s * 1000),
+				.trainOnDuration_ms 	= (uint32_t)(vnsb_on_duration_s * S_TO_MS_MULTIPLIER_INT),
+				.trainOffDuration_ms 	= (uint32_t)(vnsb_off_duration_s * S_TO_MS_MULTIPLIER_INT),
 		};
 
 		Current_Sources_t configuration = {
@@ -180,7 +190,7 @@ bool app_mode_therapy_start(void) {
 
 		bsp_wdg_refresh();
 		app_func_stim_off();
-		HAL_Delay(100);
+		HAL_Delay(THERAPY_SETTLE_DELAY_MS);
 
 		app_func_stim_curr_src_set(configuration);
 		app_func_stim_circuit_para1_set(parameters);
@@ -198,7 +208,7 @@ bool app_mode_therapy_start(void) {
 		app_func_stim_sel_set(sel);
 		app_func_stim_stimulus_enable(true);
 
-		HAL_Delay(100);
+		HAL_Delay(THERAPY_SETTLE_DELAY_MS);
 		bsp_wdg_refresh();
 
 		app_func_stim_mux_enable(true);
