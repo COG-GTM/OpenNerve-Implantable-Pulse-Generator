@@ -133,11 +133,25 @@ bool app_mode_therapy_start(void) {
 			app_func_para_data_get((const uint8_t*)SPID_BIPHASIC_TRAIN_ON_DURATION, (uint8_t*)&train_on, sizeof(train_on));
 			app_func_para_data_get((const uint8_t*)SPID_BIPHASIC_TRAIN_OFF_DURATION, (uint8_t*)&train_off, sizeof(train_off));
 
+			uint32_t biphasic_period_us = (freq > 0.0) ? (uint32_t)(1000000.0 / freq) : 0;
+			uint32_t biphasic_cathodic_us = (uint32_t)cathodic_w;
+			uint32_t biphasic_anodic_us   = (uint32_t)anodic_w;
+			uint32_t biphasic_gap_us      = (uint32_t)interphase_g;
+			uint32_t biphasic_active_us   = biphasic_cathodic_us + biphasic_gap_us + biphasic_anodic_us;
+
+			/* Clamp total active phase duration to fit within the pulse period */
+			if (biphasic_active_us > 0 && biphasic_period_us > 0 && biphasic_active_us >= biphasic_period_us) {
+				_Float64 scale = (_Float64)(biphasic_period_us - 1) / (_Float64)biphasic_active_us;
+				biphasic_cathodic_us = (uint32_t)(biphasic_cathodic_us * scale);
+				biphasic_anodic_us   = (uint32_t)(biphasic_anodic_us   * scale);
+				biphasic_gap_us      = (uint32_t)(biphasic_gap_us      * scale);
+			}
+
 			BiphasicCustom_Waveform_t biphasic_para = {
-				.cathodicWidth_us 		= (uint32_t)cathodic_w,
-				.anodicWidth_us 		= (uint32_t)anodic_w,
-				.interphaseGap_us 		= (uint32_t)interphase_g,
-				.pulsePeriod_us 		= (uint32_t)(1000000.0 / freq),
+				.cathodicWidth_us 		= biphasic_cathodic_us,
+				.anodicWidth_us 		= biphasic_anodic_us,
+				.interphaseGap_us 		= biphasic_gap_us,
+				.pulsePeriod_us 		= biphasic_period_us,
 				.trainOnDuration_ms 	= (uint32_t)(train_on * 1000.0),
 				.trainOffDuration_ms 	= (uint32_t)(train_off * 1000.0),
 			};

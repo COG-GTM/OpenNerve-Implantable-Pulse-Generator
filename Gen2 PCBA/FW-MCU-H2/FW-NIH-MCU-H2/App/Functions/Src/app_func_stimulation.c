@@ -492,6 +492,15 @@ void app_func_stim_circuit_para2_set(Stimulus_Waveform_t stimulus_waveform) {
  * @param waveform The waveform settings
  */
 void app_func_stim_biphasic_para_set(BiphasicCustom_Waveform_t waveform) {
+	/* Clamp active phase widths so they fit within the pulse period */
+	uint32_t active_us = waveform.cathodicWidth_us + waveform.interphaseGap_us + waveform.anodicWidth_us;
+	if (active_us > 0 && waveform.pulsePeriod_us > 0 && active_us >= waveform.pulsePeriod_us) {
+		uint32_t max_active = waveform.pulsePeriod_us - 1;
+		waveform.cathodicWidth_us  = (uint32_t)((_Float64)waveform.cathodicWidth_us  * max_active / active_us);
+		waveform.anodicWidth_us    = (uint32_t)((_Float64)waveform.anodicWidth_us    * max_active / active_us);
+		waveform.interphaseGap_us  = (uint32_t)((_Float64)waveform.interphaseGap_us  * max_active / active_us);
+	}
+
 	biphasicWave.cathodic_width_us 		= waveform.cathodicWidth_us;
 	biphasicWave.anodic_width_us 		= waveform.anodicWidth_us;
 	biphasicWave.interphase_gap_us 		= waveform.interphaseGap_us;
@@ -517,7 +526,7 @@ void app_func_stim_biphasic_para_set(BiphasicCustom_Waveform_t waveform) {
  * @param imc_en The enabled status of IMC
  */
 void app_func_stim_biphasic_start(bool imc_en) {
-	if (biphasicWave.is_running) {
+	if (biphasicWave.is_running || pulseWave2.is_running) {
 		return;
 	}
 
@@ -651,7 +660,7 @@ void app_func_stim_stim1_start(bool imc_en) {
  *
  */
 void app_func_stim_stim2_start(void) {
-	if (pulseWave2.is_running) {
+	if (pulseWave2.is_running || biphasicWave.is_running) {
 		return;
 	}
 

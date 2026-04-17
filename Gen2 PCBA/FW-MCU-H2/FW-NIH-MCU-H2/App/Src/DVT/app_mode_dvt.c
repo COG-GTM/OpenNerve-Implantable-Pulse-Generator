@@ -460,15 +460,29 @@ static Cmd_Resp_t app_mode_dvt_command_req_parser(Cmd_Req_t req) {
 			payload_offset = copyPayloadToStructField(payload_offset, (uint8_t*)&train_on, sizeof(train_on));
 			payload_offset = copyPayloadToStructField(payload_offset, (uint8_t*)&train_off, sizeof(train_off));
 
-			BiphasicCustom_Waveform_t biphasic_para = {
-					.cathodicWidth_us 		= (uint32_t)cathodic_w,
-					.anodicWidth_us 		= (uint32_t)anodic_w,
-					.interphaseGap_us 		= (uint32_t)interphase_g,
-					.pulsePeriod_us 		= (pulse_freq > 0) ? (uint32_t)(1000000.0 / (_Float64)pulse_freq) : 0,
-					.trainOnDuration_ms 	= (uint32_t)train_on,
-					.trainOffDuration_ms 	= (uint32_t)train_off,
-			};
-			app_func_stim_biphasic_para_set(biphasic_para);
+				uint32_t bp_cathodic = (uint32_t)cathodic_w;
+				uint32_t bp_anodic   = (uint32_t)anodic_w;
+				uint32_t bp_gap      = (uint32_t)interphase_g;
+				uint32_t bp_period   = (pulse_freq > 0) ? (uint32_t)(1000000.0 / (_Float64)pulse_freq) : 0;
+				uint32_t bp_active   = bp_cathodic + bp_gap + bp_anodic;
+
+				/* Clamp active phase widths so they fit within the pulse period */
+				if (bp_active > 0 && bp_period > 0 && bp_active >= bp_period) {
+					uint32_t bp_max = bp_period - 1;
+					bp_cathodic = (uint32_t)((_Float64)bp_cathodic * bp_max / bp_active);
+					bp_anodic   = (uint32_t)((_Float64)bp_anodic   * bp_max / bp_active);
+					bp_gap      = (uint32_t)((_Float64)bp_gap      * bp_max / bp_active);
+				}
+
+				BiphasicCustom_Waveform_t biphasic_para = {
+						.cathodicWidth_us 		= bp_cathodic,
+						.anodicWidth_us 		= bp_anodic,
+						.interphaseGap_us 		= bp_gap,
+						.pulsePeriod_us 		= bp_period,
+						.trainOnDuration_ms 	= (uint32_t)train_on,
+						.trainOffDuration_ms 	= (uint32_t)train_off,
+				};
+				app_func_stim_biphasic_para_set(biphasic_para);
 		}
 	}
 		break;
