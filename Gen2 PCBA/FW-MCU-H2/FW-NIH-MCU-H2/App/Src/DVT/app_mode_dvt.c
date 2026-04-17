@@ -417,9 +417,10 @@ static Cmd_Resp_t app_mode_dvt_command_req_parser(Cmd_Req_t req) {
 					.trainOnDuration_ms 	= StimulusCircuitParameters.stimDurationVNS_ms,
 					.trainOffDuration_ms 	= StimulusCircuitParameters.stimDurationVNS_ms,
 			};
-			app_func_stim_circuit_para1_set(para1);
-			app_func_stim_circuit_para2_set(para2);
-			app_func_stim_sine_para_set(sine_para);
+				app_func_stim_circuit_para1_set(para1);
+				app_func_stim_circuit_para2_set(para2);
+				app_func_stim_sine_para_set(sine_para);
+				mocked.biphasic_en = false;
 		}
 	}
 		break;
