@@ -984,14 +984,15 @@ void app_func_stim_biphasic_stop(void) {
  */
 void app_func_stim_biphasic_cb(BIPHASIC_InterruptState state) {
 	if (state == BIPHASIC_CATHODIC) {
-		/* Compute train position from un-advanced timer for this pulse period.
-		 * train_timer_us is NOT advanced here — it is deferred to BIPHASIC_IDLE
-		 * so that both CATHODIC and ANODIC phases use the same train position,
+		/* Compute train on/off decision once per pulse period and store it.
+		 * ANODIC reuses pulse_active instead of re-reading the hardware counter,
+		 * which will have advanced by (cathodic_width + interphase_gap) us,
 		 * preventing charge-imbalanced pulses at train on/off boundaries. */
 		uint32_t cnt = __HAL_TIM_GET_COUNTER(&HANDLE_PULSE1_TIM);
 		uint32_t curr_timer = (biphasicWave.train_timer_us + cnt) % biphasicWave.train_period_us;
+		biphasicWave.pulse_active = (curr_timer < biphasicWave.train_on_duration_us && !biphasicWave.pause_output);
 
-		if (curr_timer < biphasicWave.train_on_duration_us && !biphasicWave.pause_output) {
+		if (biphasicWave.pulse_active) {
 			sel_ch_srcsnk_set(biphasicWave.sel_positive, biphasicWave.sel_enabled);
 		}
 		else {
@@ -1002,10 +1003,7 @@ void app_func_stim_biphasic_cb(BIPHASIC_InterruptState state) {
 		sel_ch_srcsnk_set(biphasicWave.sel_discharge, biphasicWave.sel_enabled);
 	}
 	else if (state == BIPHASIC_ANODIC) {
-		uint32_t cnt = __HAL_TIM_GET_COUNTER(&HANDLE_PULSE1_TIM);
-		uint32_t curr_timer = (biphasicWave.train_timer_us + cnt) % biphasicWave.train_period_us;
-
-		if (curr_timer < biphasicWave.train_on_duration_us && !biphasicWave.pause_output) {
+		if (biphasicWave.pulse_active) {
 			sel_ch_srcsnk_set(biphasicWave.sel_negative, biphasicWave.sel_enabled);
 		}
 		else {

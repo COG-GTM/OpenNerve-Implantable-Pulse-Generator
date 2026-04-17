@@ -197,6 +197,8 @@ typedef struct {
 
 	bool		pause_output;					/*!< Pause the signal output. */
 
+	bool		pulse_active;					/*!< Train on/off decision for current pulse period (set in CATHODIC, reused in ANODIC). */
+
 	bool		imc_is_enabled;					/*!< The IMC is enabled. */
 
 	Ramp_t		ramp;							/*!< Ramp up and down settings. */
