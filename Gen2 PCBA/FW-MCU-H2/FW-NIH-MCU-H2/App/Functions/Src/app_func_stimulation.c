@@ -472,7 +472,7 @@ void app_func_stim_circuit_para2_set(Stimulus_Waveform_t stimulus_waveform) {
  * @param imc_en The enabled status of IMC
  */
 void app_func_stim_stim1_start(bool imc_en) {
-	if (pulseWave1.is_running) {
+	if (pulseWave1.is_running || biphasicWave.is_running) {
 		return;
 	}
 
@@ -984,10 +984,12 @@ void app_func_stim_biphasic_stop(void) {
  */
 void app_func_stim_biphasic_cb(BIPHASIC_InterruptState state) {
 	if (state == BIPHASIC_CATHODIC) {
-		uint32_t arr = __HAL_TIM_GET_AUTORELOAD(&HANDLE_PULSE1_TIM) + 1;
+		/* Compute train position from un-advanced timer for this pulse period.
+		 * train_timer_us is NOT advanced here — it is deferred to BIPHASIC_IDLE
+		 * so that both CATHODIC and ANODIC phases use the same train position,
+		 * preventing charge-imbalanced pulses at train on/off boundaries. */
 		uint32_t cnt = __HAL_TIM_GET_COUNTER(&HANDLE_PULSE1_TIM);
 		uint32_t curr_timer = (biphasicWave.train_timer_us + cnt) % biphasicWave.train_period_us;
-		biphasicWave.train_timer_us = (biphasicWave.train_timer_us + arr) % biphasicWave.train_period_us;
 
 		if (curr_timer < biphasicWave.train_on_duration_us && !biphasicWave.pause_output) {
 			sel_ch_srcsnk_set(biphasicWave.sel_positive, biphasicWave.sel_enabled);
@@ -1012,6 +1014,11 @@ void app_func_stim_biphasic_cb(BIPHASIC_InterruptState state) {
 	}
 	else if (state == BIPHASIC_IDLE) {
 		sel_ch_srcsnk_set(biphasicWave.sel_discharge, biphasicWave.sel_enabled);
+
+		/* Advance train_timer_us at the end of the pulse period (IDLE state)
+		 * so all phases within the same period see consistent train position. */
+		uint32_t arr = __HAL_TIM_GET_AUTORELOAD(&HANDLE_PULSE1_TIM) + 1;
+		biphasicWave.train_timer_us = (biphasicWave.train_timer_us + arr) % biphasicWave.train_period_us;
 	}
 }
 
