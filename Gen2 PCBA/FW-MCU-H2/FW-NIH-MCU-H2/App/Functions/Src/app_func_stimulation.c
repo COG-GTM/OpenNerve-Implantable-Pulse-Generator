@@ -884,6 +884,14 @@ void app_func_stim_sync(void) {
 	pulseWave2.is_positive 		= true;
 	sineWave.train_timer_us 	= 0;
 
+	biphasicWave.train_timer_us 	= 0;
+	biphasicWave.ramp.timer_us 	= 0;
+	biphasicWave.phase 				= BIPHASIC_PHASE_POSITIVE;
+	if (biphasicWave.is_running) {
+		__HAL_TIM_SET_AUTORELOAD(&HANDLE_PULSE1_TIM, biphasicWave.positive_width_us - 1);
+		__HAL_TIM_SET_COMPARE(&HANDLE_PULSE1_TIM, TIM_CH_PULSE1_TO_LOW, biphasicWave.positive_width_us);
+	}
+
 	__HAL_TIM_SET_COUNTER(&HANDLE_PULSE1_TIM, 0);
 	__HAL_TIM_SET_COUNTER(&HANDLE_PULSE2_TIM, 0);
 	__HAL_TIM_SET_COUNTER(&HANDLE_SINE_TIM, sineWave.phaseShift_us);
@@ -1061,31 +1069,34 @@ void app_func_stim_biphasic_cb(PWM_InterruptState state) {
 		switch (biphasicWave.phase) {
 		case BIPHASIC_PHASE_POSITIVE:
 			biphasicWave.phase = BIPHASIC_PHASE_GAP;
-			if (biphasicWave.interphase_gap_us > 0) {
-				__HAL_TIM_SET_AUTORELOAD(&HANDLE_PULSE1_TIM, biphasicWave.interphase_gap_us - 1);
-				uint32_t sw = (biphasicWave.interphase_gap_us >= BER_HI_TIME_US) ?
-							 (biphasicWave.interphase_gap_us - BER_HI_TIME_US) : 0;
-				__HAL_TIM_SET_COMPARE(&HANDLE_PULSE1_TIM, TIM_CH_PULSE1_BEF_HI, sw);
-			}
-			else {
-				/* Zero gap: skip directly to negative phase */
+				if (biphasicWave.interphase_gap_us > 0) {
+					__HAL_TIM_SET_AUTORELOAD(&HANDLE_PULSE1_TIM, biphasicWave.interphase_gap_us - 1);
+					__HAL_TIM_SET_COMPARE(&HANDLE_PULSE1_TIM, TIM_CH_PULSE1_TO_LOW, biphasicWave.interphase_gap_us);
+					uint32_t sw = (biphasicWave.interphase_gap_us >= BER_HI_TIME_US) ?
+								 (biphasicWave.interphase_gap_us - BER_HI_TIME_US) : 0;
+					__HAL_TIM_SET_COMPARE(&HANDLE_PULSE1_TIM, TIM_CH_PULSE1_BEF_HI, sw);
+				}
+				else {
+					/* Zero gap: skip directly to negative phase */
+					biphasicWave.phase = BIPHASIC_PHASE_NEGATIVE;
+					__HAL_TIM_SET_AUTORELOAD(&HANDLE_PULSE1_TIM, biphasicWave.negative_width_us - 1);
+					__HAL_TIM_SET_COMPARE(&HANDLE_PULSE1_TIM, TIM_CH_PULSE1_TO_LOW, biphasicWave.negative_width_us);
+					uint32_t sw = (biphasicWave.negative_width_us >= BER_HI_TIME_US) ?
+								 (biphasicWave.negative_width_us - BER_HI_TIME_US) : 0;
+					__HAL_TIM_SET_COMPARE(&HANDLE_PULSE1_TIM, TIM_CH_PULSE1_BEF_HI, sw);
+				}
+				break;
+
+			case BIPHASIC_PHASE_GAP:
 				biphasicWave.phase = BIPHASIC_PHASE_NEGATIVE;
 				__HAL_TIM_SET_AUTORELOAD(&HANDLE_PULSE1_TIM, biphasicWave.negative_width_us - 1);
-				uint32_t sw = (biphasicWave.negative_width_us >= BER_HI_TIME_US) ?
-							 (biphasicWave.negative_width_us - BER_HI_TIME_US) : 0;
-				__HAL_TIM_SET_COMPARE(&HANDLE_PULSE1_TIM, TIM_CH_PULSE1_BEF_HI, sw);
-			}
-			break;
-
-		case BIPHASIC_PHASE_GAP:
-			biphasicWave.phase = BIPHASIC_PHASE_NEGATIVE;
-			__HAL_TIM_SET_AUTORELOAD(&HANDLE_PULSE1_TIM, biphasicWave.negative_width_us - 1);
-			{
-				uint32_t sw = (biphasicWave.negative_width_us >= BER_HI_TIME_US) ?
-							 (biphasicWave.negative_width_us - BER_HI_TIME_US) : 0;
-				__HAL_TIM_SET_COMPARE(&HANDLE_PULSE1_TIM, TIM_CH_PULSE1_BEF_HI, sw);
-			}
-			break;
+				__HAL_TIM_SET_COMPARE(&HANDLE_PULSE1_TIM, TIM_CH_PULSE1_TO_LOW, biphasicWave.negative_width_us);
+				{
+					uint32_t sw = (biphasicWave.negative_width_us >= BER_HI_TIME_US) ?
+								 (biphasicWave.negative_width_us - BER_HI_TIME_US) : 0;
+					__HAL_TIM_SET_COMPARE(&HANDLE_PULSE1_TIM, TIM_CH_PULSE1_BEF_HI, sw);
+				}
+				break;
 
 		case BIPHASIC_PHASE_NEGATIVE:
 		{
@@ -1095,14 +1106,15 @@ void app_func_stim_biphasic_cb(PWM_InterruptState state) {
 								 biphasicWave.negative_width_us;
 			uint32_t idle_us = (biphasicWave.pwm_period_us > active_us) ?
 							   (biphasicWave.pwm_period_us - active_us) : 1;
-			biphasicWave.phase = BIPHASIC_PHASE_IDLE;
-			__HAL_TIM_SET_AUTORELOAD(&HANDLE_PULSE1_TIM, idle_us - 1);
-			{
-				uint32_t sw = (idle_us >= BER_HI_TIME_US) ?
-							 (idle_us - BER_HI_TIME_US) : 0;
-				__HAL_TIM_SET_COMPARE(&HANDLE_PULSE1_TIM, TIM_CH_PULSE1_BEF_HI, sw);
-			}
-			break;
+				biphasicWave.phase = BIPHASIC_PHASE_IDLE;
+				__HAL_TIM_SET_AUTORELOAD(&HANDLE_PULSE1_TIM, idle_us - 1);
+				__HAL_TIM_SET_COMPARE(&HANDLE_PULSE1_TIM, TIM_CH_PULSE1_TO_LOW, idle_us);
+				{
+					uint32_t sw = (idle_us >= BER_HI_TIME_US) ?
+								 (idle_us - BER_HI_TIME_US) : 0;
+					__HAL_TIM_SET_COMPARE(&HANDLE_PULSE1_TIM, TIM_CH_PULSE1_BEF_HI, sw);
+				}
+				break;
 		}
 
 		case BIPHASIC_PHASE_IDLE:
@@ -1110,6 +1122,7 @@ void app_func_stim_biphasic_cb(PWM_InterruptState state) {
 			/* Restart from positive phase */
 			biphasicWave.phase = BIPHASIC_PHASE_POSITIVE;
 			__HAL_TIM_SET_AUTORELOAD(&HANDLE_PULSE1_TIM, biphasicWave.positive_width_us - 1);
+			__HAL_TIM_SET_COMPARE(&HANDLE_PULSE1_TIM, TIM_CH_PULSE1_TO_LOW, biphasicWave.positive_width_us);
 			{
 				uint32_t sw = (biphasicWave.positive_width_us >= BER_HI_TIME_US) ?
 							 (biphasicWave.positive_width_us - BER_HI_TIME_US) : 0;
