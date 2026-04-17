@@ -129,6 +129,14 @@ static Parameter_Format_Value_t format_sine_frequency			= {0.5, 	15.0, 	2.5, 	0.
 static Parameter_Format_Value_t format_vnsb_on_duration			= {1.0, 	600.0, 	10.0, 	1.0};
 static Parameter_Format_Value_t format_vnsb_off_duration		= {0.0, 	600.0, 	10.0, 	1.0};
 
+static Parameter_Format_Value_t format_biphasic_cathodic_width	= {50.0, 	1000.0,	200.0, 	10.0};	 /* 50-1000 us, default 200, step 10 */
+static Parameter_Format_Value_t format_biphasic_anodic_width	= {50.0, 	1000.0,	200.0, 	10.0};	 /* 50-1000 us, default 200, step 10 */
+static Parameter_Format_Value_t format_biphasic_interphase_gap	= {0.0, 	500.0, 	50.0, 	10.0};	 /* 0-500 us, default 50, step 10 */
+static Parameter_Format_Value_t format_biphasic_frequency		= {1.0, 	1200.0,	30.0, 	1.0};	 /* 1-1200 Hz, default 30, step 1 */
+static Parameter_Format_Value_t format_biphasic_amplitude		= {0.1, 	5.0, 	0.5, 	0.1};	 /* 0.1-5.0 mA, default 0.5, step 0.1 */
+static Parameter_Format_Value_t format_biphasic_train_on		= {10.0, 	300.0, 	30.0, 	10.0};	 /* 10-300 s, default 30, step 10 */
+static Parameter_Format_Value_t format_biphasic_train_off		= {0.0, 	300.0, 	60.0, 	10.0};	 /* 0-300 s, default 60, step 10 */
+
 static Parameter_Format_Value_t format_therapy_session_1_start	= {0.0, 	1438.0, 480.0, 	1.0};
 static Parameter_Format_Value_t format_therapy_session_1_stop	= {1.0, 	1439.0, 510.0, 	1.0};
 static Parameter_Format_Value_t format_therapy_session_2_start	= {0.0, 	1438.0, 480.0, 	1.0};
@@ -197,7 +205,15 @@ Parameter_t parameters_list[] = {
 		{SPID_MAX_SAFE_SINE_AMPLITUDE,		0U,	{NULL, &format_max_safe_sine_amplitude}},
 		{SPID_SINE_FREQUENCY,				0U,	{NULL, &format_sine_frequency}},
 		{SPID_VNSB_ON_DURATION,				0U,	{NULL, &format_vnsb_on_duration}},
-		{SPID_VNSB_OFF_DURATION,			0U,	{NULL, &format_vnsb_off_duration}},
+		{SPID_VNSB_OFF_DURATION,				0U,	{NULL, &format_vnsb_off_duration}},
+
+		{SPID_BIPHASIC_CATHODIC_WIDTH,			0U,	{NULL, &format_biphasic_cathodic_width}},
+		{SPID_BIPHASIC_ANODIC_WIDTH,			0U,	{NULL, &format_biphasic_anodic_width}},
+		{SPID_BIPHASIC_INTERPHASE_GAP,			0U,	{NULL, &format_biphasic_interphase_gap}},
+		{SPID_BIPHASIC_FREQUENCY,				0U,	{NULL, &format_biphasic_frequency}},
+		{SPID_BIPHASIC_AMPLITUDE,				0U,	{NULL, &format_biphasic_amplitude}},
+		{SPID_BIPHASIC_TRAIN_ON,				0U,	{NULL, &format_biphasic_train_on}},
+		{SPID_BIPHASIC_TRAIN_OFF,				0U,	{NULL, &format_biphasic_train_off}},
 
 		{SPID_THERAPY_SESSION_1_START,		0U,	{NULL, &format_therapy_session_1_start}},
 		{SPID_THERAPY_SESSION_1_STOP,		0U,	{NULL, &format_therapy_session_1_stop}},
