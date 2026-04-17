@@ -942,6 +942,8 @@ void app_func_stim_biphasic_para_set(Biphasic_Waveform_t biphasic_waveform) {
 	biphasicWave.train_on_duration_us = biphasic_waveform.trainOnDuration_ms * 1000;
 
 	if (biphasicWave.is_running) {
+		biphasicWave.train_timer_us = 0;
+		biphasicWave.ramp.timer_us = 0;
 		biphasicWave.phase = BIPHASIC_PHASE_CATHODIC;
 		sel_ch_srcsnk_set(biphasicWave.sel_cathodic, biphasicWave.sel_enabled);
 		__HAL_TIM_SET_AUTORELOAD(&HANDLE_PULSE1_TIM, biphasicWave.cathodic_width_us - 1);
