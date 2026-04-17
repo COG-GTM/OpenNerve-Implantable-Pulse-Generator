@@ -8,8 +8,11 @@
 #include "app_config.h"
 
 typedef struct {
+	/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 	uint8_t Opcode;
+	/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 	uint8_t PayloadLen;
+	/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 	uint8_t Payload[20];
 } testCmd_Req_t;
 
@@ -854,6 +857,7 @@ static int step = 0;
 static Cmd_Req_t cmd_Simulate;
 static uint32_t  ms_tick = 0U;
 
+/* NOLINTNEXTLINE(readability-function-cognitive-complexity) */
 void app_mode_dvt_test_handler(void) {
 	if (step < (sizeof(TEST_CMDS)/sizeof(testCmd_Req_t))) {
 		while (HAL_GetTick() < (ms_tick + TEST_INTERVAL)) {

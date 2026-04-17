@@ -9,16 +9,24 @@
 #include "app_mode_dvt_test.h"
 #endif
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint8_t hvSupplyTurnOn = 0;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static bool shutdown = false;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static bool sw_reset = false;
 
 typedef struct {
+	/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 	bool src1;
+	/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 	bool src2;
+	/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 	bool vnsb_en;
+	/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 	bool imp_en;
 } Mocked_t;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Mocked_t mocked = {
 		.src1 = false,
 		.src2 = false,
@@ -26,6 +34,7 @@ static Mocked_t mocked = {
 		.imp_en = false,
 };
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static TestInformation_t TestInformation = {
 		.hvSupplyEnable = 0,
 		.vddsSupplyEnable = 0,
@@ -33,11 +42,13 @@ static TestInformation_t TestInformation = {
 		.reserved = {0,0,0,0,0},
 };
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static DacAbOutputVoltage_t DacAbOutputVoltage = {
 		.aDacOutputVoltage_mv = 0,
 		.bDacOutputVoltage_mv = 0,
 };
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static StimulusCircuitParameters_t StimulusCircuitParameters = {
 		.pulseWidth1_us = 100,
 		.stimDuration1_ms = 200,
@@ -49,6 +60,7 @@ static StimulusCircuitParameters_t StimulusCircuitParameters = {
 		.stimDurationVNS_ms = 200,
 };
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static CurrentSourcesConfiguration_t CurrentSourcesConfiguration = {
 		.src1 = false,
 		.src2 = false,
@@ -59,6 +71,7 @@ static CurrentSourcesConfiguration_t CurrentSourcesConfiguration = {
 		.snk5 = false,
 };
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static StimSelPositions_t StimSelPositions = {
 		.stima_sel = 0,
 		.stimb_sel = 0,
@@ -69,6 +82,7 @@ static StimSelPositions_t StimSelPositions = {
 		.stim_sel_ch4 = 0,
 };
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static ImpSelPositions_t ImpSelPositions = {
 		.imp_in_n_sel0 = false,
 		.imp_in_n_sel1 = false,
@@ -86,18 +100,28 @@ typedef enum {
 typedef struct {
 	MIS2DHTR_t				Device;
 	XYZ_t					SampleBuffer[XYZ_BUFF_SIZE];
+	/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 	uint32_t 				Timestamp[XYZ_BUFF_SIZE];
+	/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 	volatile uint32_t		LastFifoTimestamp;
+	/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 	volatile uint16_t		WriteIndex;
+	/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 	volatile uint16_t		ReadIndex;
+	/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 	uint16_t				FifoIndex;
 	volatile ResponseMode_t	Mode;
+	/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 	bool					Startup;
+	/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 	volatile bool			Overflow;
+	/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 	volatile bool			WriteSuspend;
+	/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 	volatile bool			ChannelsOpen;
 } ACC_t;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 ACC_t acc[2] = {
 		{
 				.Device.DeviceAddress = MIS2DHTR_DEVICE_ADDR_L,
@@ -135,6 +159,7 @@ static uint8_t* copyPayloadToStructField(uint8_t* p_payload, uint8_t* p_field, u
 	return (p_payload + field_size);
 }
 
+/* NOLINTNEXTLINE(readability-function-cognitive-complexity) */
 static Cmd_Resp_t app_mode_dvt_command_req_parser(Cmd_Req_t req) {
 	Cmd_Resp_t resp = {
 			.Opcode 		= req.Opcode,
@@ -142,7 +167,7 @@ static Cmd_Resp_t app_mode_dvt_command_req_parser(Cmd_Req_t req) {
 			.Payload 		= NULL,
 			.PayloadLen 	= 0,
 	};
-	uint8_t len_payload;
+	uint8_t len_payload = 0;
 
 	switch(req.Opcode) {
 	case OP_SET_START_STATE:
@@ -284,8 +309,9 @@ static Cmd_Resp_t app_mode_dvt_command_req_parser(Cmd_Req_t req) {
 			uint8_t* payload_offset = req.Payload;
 			payload_offset = copyPayloadToStructField (payload_offset, (uint8_t*)&hvsupplyvoltagevalue.voltage_mv, sizeof(hvsupplyvoltagevalue.voltage_mv));
 
-			if (app_func_stim_hv_sup_volt_set(hvsupplyvoltagevalue.voltage_mv) != HAL_OK)
+			if (app_func_stim_hv_sup_volt_set(hvsupplyvoltagevalue.voltage_mv) != HAL_OK) {
 				resp.Status = STATUS_INVALID;
+			}
 		}
 	}
 		break;

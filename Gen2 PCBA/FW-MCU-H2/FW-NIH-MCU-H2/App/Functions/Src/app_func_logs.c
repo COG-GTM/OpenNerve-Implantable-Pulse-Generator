@@ -11,18 +11,25 @@
 #define DATA_TYPE_PARAMETER				"<PA>"		/*!< Label message for data type "PARAMETER" */
 #define DATA_TYPE_IMPEDANCE				"<IM>"		/*!< Label message for data type "IMPEDANCE" */
 
+#define LOG_BUFFER_SIZE				512			/*!< Size of log read/write buffers */
+
 #define PATTERN_TIMESTAMP				"[20YY-MM-DDThh:mm:ssZ(uuu)]"	//UTC format (www.utctime.net)
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 Log_Info_t logInfo = {
 		.LogPointer = ADDR_LOG_BASE,
 };
 
-char log_buff_write[512];
-char log_buff_read[512];
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
+char log_buff_write[LOG_BUFFER_SIZE];
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
+char log_buff_read[LOG_BUFFER_SIZE];
 
 const char log_end[] = "\r\n";
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint32_t lastReadAddress = ADDR_LOG_BASE;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static char lastReadTimeStamp[] = PATTERN_TIMESTAMP;
 
 /**
@@ -106,6 +113,7 @@ void app_func_logs_init(void) {
  * @param callback Callback after writing event
  */
 void app_func_logs_event_write(const char* event_type, Log_Event_Write_Callback callback) {
+	(void)callback;
 	uint16_t offset = app_func_logs_timestamp_gen(NULL);
 
 	(void)memcpy(&log_buff_write[offset], DATA_TYPE_EVENT, LEN_DATA_TYPE_STR);
@@ -126,6 +134,7 @@ void app_func_logs_event_write(const char* event_type, Log_Event_Write_Callback 
  * @param vbatA The voltage of battery 1
  * @param vbatB The voltage of battery 2
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 void app_func_logs_batt_volt_write(uint16_t vbatA, uint16_t vbatB) {
 	uint16_t offset = app_func_logs_timestamp_gen(NULL);
 
@@ -199,6 +208,7 @@ void app_func_logs_imped_write(uint32_t imp) {
  * @param p_data Parameter data
  * @param data_len The data length of the parameter
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 void app_func_logs_parameter_write(uint8_t* p_id, uint8_t data_format, const uint8_t* p_data, uint16_t data_len) {
 	uint16_t offset = app_func_logs_timestamp_gen(NULL);
 

@@ -6,24 +6,40 @@
 #include "bsp_serialport.h"
 #include "bsp_config.h"
 
+#define CY15B108QN_MEM_WR_BUFFER_SIZE	500		/*!< Size of CY15B108QN memory write buffer */
+
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 Serialport_Buffer_t sp_spi;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 Buffer_t	active_spi_tx;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 Serialport_Buffer_t sp_uart;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint8_t CY15B108QN_mem_wr_opcode = 0;
-static uint8_t CY15B108QN_mem_wr_buffer[500];
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
+static uint8_t CY15B108QN_mem_wr_buffer[CY15B108QN_MEM_WR_BUFFER_SIZE];
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint16_t CY15B108QN_mem_wr_len = 0;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint32_t CY15B108QN_mem_wr_address = 0;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint16_t CY15B108QN_mem_wr_datalen = 0;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static bool init = true;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Cmd_Parser cmdParser = NULL;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static CY15B108QN_Write_Callback CY15B108QN_writeCallback = NULL;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint8_t DAC8050x_reg_addr;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint8_t DAC8050x_reg_data[2];
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static bool XL_en = false;
 
 /**
@@ -262,6 +278,7 @@ void bsp_sp_XL_enable(bool enable) {
  * @param data_len The length of data to be written to the MIS2DHTR register
  * @return uint8_t HAL status
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 uint8_t bsp_sp_MIS2DHTR_write(uint8_t dev_addr, uint8_t reg_addr, uint8_t* reg_data, uint16_t data_len) {
 	return (uint8_t)HAL_I2C_Mem_Write(&HANDLE_ACC_I2C, dev_addr, reg_addr, I2C_MEMADD_SIZE_8BIT, reg_data, data_len, 10);
 }
@@ -275,6 +292,7 @@ uint8_t bsp_sp_MIS2DHTR_write(uint8_t dev_addr, uint8_t reg_addr, uint8_t* reg_d
  * @param data_len The length of data read from MIS2DHTR register
  * @return uint8_t HAL status
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 uint8_t bsp_sp_MIS2DHTR_read(uint8_t dev_addr, uint8_t reg_addr, uint8_t* reg_data, uint16_t data_len) {
 	return (uint8_t)HAL_I2C_Mem_Read(&HANDLE_ACC_I2C, dev_addr, reg_addr, I2C_MEMADD_SIZE_8BIT, reg_data, data_len, 10);
 }

@@ -6,8 +6,10 @@
 #include "bsp_fram.h"
 #include "bsp_config.h"
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static bool write_cplt = false;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static Log_Write_Callback log_writeCallback = NULL;
 
 /**
@@ -40,6 +42,7 @@ void bsp_fram_deinit(void) {
  * @param data_len The length of data written in FRAM
  * @param waitfor_cplt Wait for writing to complete
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 __weak void bsp_fram_write(uint32_t addr, const uint8_t* p_data, uint16_t data_len, bool waitfor_cplt) {
 	if (HAL_GPIO_ReadPin(FRAM_EN_GPIO_Port, FRAM_EN_Pin) == GPIO_PIN_RESET) {
 		return;
@@ -62,6 +65,7 @@ __weak void bsp_fram_write(uint32_t addr, const uint8_t* p_data, uint16_t data_l
  * @param p_data Data read from FRAM
  * @param data_len The length of data read from FRAM
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 __weak void bsp_fram_read(uint32_t addr, uint8_t* p_data, uint16_t data_len) {
 	bsp_sp_CY15B108QN_read(addr, p_data, data_len);
 }
@@ -72,6 +76,7 @@ __weak void bsp_fram_read(uint32_t addr, uint8_t* p_data, uint16_t data_len) {
  * @param addr The address to erase data in FRAM
  * @param erase_size The size of the data to erase
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 __weak void bsp_fram_erase(uint32_t addr, uint32_t erase_size) {
 	bsp_sp_CY15B108QN_erase(addr, erase_size);
 }
@@ -82,6 +87,7 @@ __weak void bsp_fram_erase(uint32_t addr, uint32_t erase_size) {
  * @param write_addr The address of the data to write
  * @param write_size The size of the data to write
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 void bsp_fram_write_cplt_cb(uint32_t write_addr, uint16_t write_size) {
 	log_writeCallback(write_addr, write_size);
 	write_cplt = true;

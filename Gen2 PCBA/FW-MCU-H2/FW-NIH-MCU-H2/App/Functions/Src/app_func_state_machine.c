@@ -6,11 +6,15 @@
 #include "app_func_state_machine.h"
 #include "app_config.h"
 
-Sys_Config_t sc = {0};
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
+Sys_Config_t sys_config = {0};
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 uint16_t curr_state = STATE_INVALID;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 int32_t impedance_test_hour_timer = -1;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 int32_t battery_test_hour_timer = -1;
 
 const uint8_t* stid_start[6] = {
@@ -31,9 +35,12 @@ const uint8_t* stid_stop[6] = {
 		(const uint8_t*)SPID_THERAPY_SESSION_6_STOP,
 };
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 uint16_t schd_therapy_start_minute = 0;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 uint16_t schd_therapy_stop_minute = 0;
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 bool schd_therapy_enable = false;
 
 /**
@@ -79,21 +86,21 @@ void app_func_sm_battery_timer_enable(void) {
  *
  */
 void app_func_sm_init(void) {
-	bsp_fram_read(ADDR_SYS_CONFIG, (uint8_t*)&sc, sizeof(sc));
-	if (sc.DefaultState == STATE_INVALID || sc.StartState == STATE_INVALID) {
-		sc.DefaultState = DEFAULT_STATE;
-		sc.StartState = DEFAULT_STATE;
-		bsp_fram_write(ADDR_SYS_CONFIG, (uint8_t*)&sc, sizeof(sc), true);
+	bsp_fram_read(ADDR_SYS_CONFIG, (uint8_t*)&sys_config, sizeof(sys_config));
+	if (sys_config.DefaultState == STATE_INVALID || sys_config.StartState == STATE_INVALID) {
+		sys_config.DefaultState = DEFAULT_STATE;
+		sys_config.StartState = DEFAULT_STATE;
+		bsp_fram_write(ADDR_SYS_CONFIG, (uint8_t*)&sys_config, sizeof(sys_config), true);
 		curr_state = DEFAULT_STATE;
 	}
-	else if (sc.DefaultState != DEFAULT_STATE) {
-		sc.DefaultState = DEFAULT_STATE;
-		sc.StartState = DEFAULT_STATE;
-		bsp_fram_write(ADDR_SYS_CONFIG, (uint8_t*)&sc, sizeof(sc), true);
+	else if (sys_config.DefaultState != DEFAULT_STATE) {
+		sys_config.DefaultState = DEFAULT_STATE;
+		sys_config.StartState = DEFAULT_STATE;
+		bsp_fram_write(ADDR_SYS_CONFIG, (uint8_t*)&sys_config, sizeof(sys_config), true);
 		curr_state = DEFAULT_STATE;
 	}
 	else {
-		curr_state = sc.StartState;
+		curr_state = sys_config.StartState;
 	}
 
 	if (__HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST)) {
@@ -190,7 +197,9 @@ void app_func_sm_wakeup_timer_cb(void) {
 void app_func_sm_active_eos_check(void) {
 	static uint32_t last_check_ms = 0;
 	uint32_t now = HAL_GetTick();
-	if ((now - last_check_ms) < 60000U) return;
+	if ((now - last_check_ms) < 60000U) {
+		return;
+	}
 	last_check_ms = now;
 
 	if (curr_state == STATE_ACT_MODE_WPT_HIGH  ||
