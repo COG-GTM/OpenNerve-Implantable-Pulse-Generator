@@ -21,6 +21,11 @@
 #define OPCODE_BLE_WL_ADD                           0x54
 #define OPCODE_BLE_DEL_PEERS                        0x55
 
+#define OPCODE_SET_BIPHASIC_PARAMS                  0x4C
+#define OPCODE_GET_BIPHASIC_PARAMS                  0x4D
+#define OPCODE_ENABLE_BIPHASIC_STIM                 0x4E
+#define OPCODE_DISABLE_BIPHASIC_STIM                0x4F
+
 #define STATUS_SUCCESS                              0x00
 #define STATUS_INVALID                              0x01
 
