@@ -34,6 +34,13 @@ bool app_mode_therapy_start(void) {
 		_Float64 sine_frequency_hz = 0.0;
 		_Float64 vnsb_on_duration_s = 0.0;
 		_Float64 vnsb_off_duration_s = 0.0;
+		_Float64 waveform_type = 0.0;
+		_Float64 biphasic_positive_width_us = 0.0;
+		_Float64 biphasic_negative_width_us = 0.0;
+		_Float64 biphasic_interphase_gap_us = 0.0;
+		_Float64 biphasic_pulse_frequency_hz = 0.0;
+		_Float64 biphasic_train_on_duration_s = 0.0;
+		_Float64 biphasic_train_off_duration_s = 0.0;
 
 		app_func_para_data_get((const uint8_t*)SPID_PULSE_AMPLITUDE, (uint8_t*)&pulse_amplitude_mA, (uint8_t)sizeof(_Float64));
 		app_func_para_data_get((const uint8_t*)SPID_PULSE_WIDTH, (uint8_t*)&pulse_width_us, (uint8_t)sizeof(_Float64));
@@ -50,6 +57,13 @@ bool app_mode_therapy_start(void) {
 		app_func_para_data_get((const uint8_t*)SPID_SINE_FREQUENCY, (uint8_t*)&sine_frequency_hz, (uint8_t)sizeof(_Float64));
 		app_func_para_data_get((const uint8_t*)SPID_VNSB_ON_DURATION, (uint8_t*)&vnsb_on_duration_s, (uint8_t)sizeof(_Float64));
 		app_func_para_data_get((const uint8_t*)SPID_VNSB_OFF_DURATION, (uint8_t*)&vnsb_off_duration_s, (uint8_t)sizeof(_Float64));
+		app_func_para_data_get((const uint8_t*)SPID_WAVEFORM_TYPE, (uint8_t*)&waveform_type, (uint8_t)sizeof(_Float64));
+		app_func_para_data_get((const uint8_t*)SPID_BIPHASIC_POSITIVE_WIDTH, (uint8_t*)&biphasic_positive_width_us, (uint8_t)sizeof(_Float64));
+		app_func_para_data_get((const uint8_t*)SPID_BIPHASIC_NEGATIVE_WIDTH, (uint8_t*)&biphasic_negative_width_us, (uint8_t)sizeof(_Float64));
+		app_func_para_data_get((const uint8_t*)SPID_BIPHASIC_INTERPHASE_GAP, (uint8_t*)&biphasic_interphase_gap_us, (uint8_t)sizeof(_Float64));
+		app_func_para_data_get((const uint8_t*)SPID_BIPHASIC_PULSE_FREQUENCY, (uint8_t*)&biphasic_pulse_frequency_hz, (uint8_t)sizeof(_Float64));
+		app_func_para_data_get((const uint8_t*)SPID_BIPHASIC_TRAIN_ON_DURATION, (uint8_t*)&biphasic_train_on_duration_s, (uint8_t)sizeof(_Float64));
+		app_func_para_data_get((const uint8_t*)SPID_BIPHASIC_TRAIN_OFF_DURATION, (uint8_t*)&biphasic_train_off_duration_s, (uint8_t)sizeof(_Float64));
 
 		if (pulse_amplitude_mA > max_safe_amplitude_mA) {
 			pulse_amplitude_mA = max_safe_amplitude_mA;
@@ -202,7 +216,23 @@ bool app_mode_therapy_start(void) {
 		bsp_wdg_refresh();
 
 		app_func_stim_mux_enable(true);
-		app_func_stim_stim1_start(false);
+		if ((uint32_t)waveform_type == 1U) {
+			_Float64 biphasic_pulse_period_us = 1.0 / biphasic_pulse_frequency_hz * 1000000.0;
+			BiphasicStimulus_Waveform_t biphasic_para = {
+					.positiveWidth_us 	= (uint32_t)biphasic_positive_width_us,
+					.negativeWidth_us 	= (uint32_t)biphasic_negative_width_us,
+					.interphaseGap_us 	= (uint32_t)biphasic_interphase_gap_us,
+					.pulsePeriod_us 	= (uint32_t)biphasic_pulse_period_us,
+					.trainOnDuration_ms = (uint32_t)(biphasic_train_on_duration_s * 1000.0),
+					.trainOffDuration_ms = (uint32_t)(biphasic_train_off_duration_s * 1000.0),
+			};
+			app_func_stim_biphasic_para_set(biphasic_para);
+			app_func_stim_biphasic_dac1_ramp_set(rampUpDuration_ms, rampDownDuration_ms, pulseDacVoltage_mv);
+			app_func_stim_biphasic_start(false);
+		}
+		else {
+			app_func_stim_stim1_start(false);
+		}
 		if (vnsb_en) {
 			app_func_stim_sine_start();
 			app_func_stim_sync();

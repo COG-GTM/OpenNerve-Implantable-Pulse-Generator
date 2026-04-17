@@ -55,6 +55,15 @@ typedef struct {
 } Stimulus_Waveform_t;
 
 typedef struct {
+	uint32_t 	positiveWidth_us;			/*!< Positive phase pulse width, unit: us */
+	uint32_t 	negativeWidth_us;			/*!< Negative phase pulse width, unit: us */
+	uint32_t 	interphaseGap_us;			/*!< Gap between positive and negative phases, unit: us */
+	uint32_t 	pulsePeriod_us;				/*!< Full biphasic pulse period, unit: us */
+	uint32_t 	trainOnDuration_ms;			/*!< Train on duration, unit: ms */
+	uint32_t 	trainOffDuration_ms;		/*!< Train off duration, unit: ms */
+} BiphasicStimulus_Waveform_t;
+
+typedef struct {
 	uint32_t	sinePeriod_us;				/*!< The period of the sine waveform, unit: us */
 	uint32_t	sinePhaseShift_us;			/*!< The phase shift of the sine waveform, unit: us */
 	uint16_t	amplitude_mV;				/*!< The amplitude of the sine wave, unit: mV */
@@ -132,6 +141,38 @@ typedef struct {
 
 	Ramp_t 		ramp;							/*!< Ramp up and down settings. */
 } PulseWave_t;
+
+typedef enum {
+	BIPHASIC_PHASE_POSITIVE = 0U,			/*!< Positive phase of biphasic pulse */
+	BIPHASIC_PHASE_GAP,						/*!< Interphase gap between positive and negative */
+	BIPHASIC_PHASE_NEGATIVE,				/*!< Negative phase of biphasic pulse */
+	BIPHASIC_PHASE_IDLE						/*!< Inter-pulse idle period */
+} BiphasicPhase_t;
+
+typedef struct {
+	uint32_t 	positive_width_us;				/*!< Positive phase width, unit: us */
+	uint32_t 	negative_width_us;				/*!< Negative phase width, unit: us */
+	uint32_t 	interphase_gap_us;				/*!< Gap between positive and negative phases, unit: us */
+	uint32_t 	pwm_period_us;					/*!< The period of the PWM, unit: us */
+
+	uint32_t 	train_period_us;				/*!< The period of the train signal, unit: us */
+	uint32_t 	train_on_duration_us;			/*!< Duration of train-on time, unit: us */
+	uint32_t 	train_timer_us;					/*!< The timer of the train signal, unit: us */
+
+	BiphasicPhase_t	phase;						/*!< Current phase of the biphasic pulse */
+	bool		is_running;						/*!< The waveform is running */
+
+	Stim_Sel_Ch_t sel_positive;					/*!< The multiplexer positive settings */
+	Stim_Sel_Ch_t sel_negative;					/*!< The multiplexer negative settings */
+	Stim_Sel_Ch_t sel_discharge;					/*!< The multiplexer discharge settings */
+	Stim_Sel_Ch_t sel_enabled;					/*!< The multiplexer enabled CH */
+
+	bool		pause_output;					/*!< Pause the signal output. */
+
+	bool		imc_is_enabled;					/*!< The IMC is enabled. */
+
+	Ramp_t 		ramp;							/*!< Ramp up and down settings. */
+} BiphasicPulseWave_t;
 
 typedef struct {
 	uint32_t tim_cnt;							/*!< The timer counts of the point on the sine period */
@@ -342,5 +383,41 @@ void app_func_stim_sync(void);
  * 
  */
 void app_func_stim_off(void);
+
+/**
+ * @brief Set the waveform settings of biphasic stimulation
+ *
+ * @param para The biphasic waveform settings
+ */
+void app_func_stim_biphasic_para_set(BiphasicStimulus_Waveform_t para);
+
+/**
+ * @brief Set the ramp settings for biphasic DAC1
+ *
+ * @param ramp_up_duration_ms The duration of the ramp up, unit: ms
+ * @param ramp_down_duration_ms The duration of the ramp down, unit: ms
+ * @param voltage_mv The max voltage of VOUTA, unit: mV
+ */
+void app_func_stim_biphasic_dac1_ramp_set(uint32_t ramp_up_duration_ms, uint32_t ramp_down_duration_ms, uint16_t voltage_mv);
+
+/**
+ * @brief Generate biphasic waveforms based on waveform settings and current source settings
+ *
+ * @param imc_en The enabled status of IMC
+ */
+void app_func_stim_biphasic_start(bool imc_en);
+
+/**
+ * @brief Stop biphasic waveform
+ *
+ */
+void app_func_stim_biphasic_stop(void);
+
+/**
+ * @brief Timer callback of biphasic waveform
+ *
+ * @param state Callback state
+ */
+void app_func_stim_biphasic_cb(PWM_InterruptState state);
 
 #endif /* FUNCTIONS_INC_APP_FUNC_STIMULATION_H_ */
