@@ -417,7 +417,7 @@ void app_func_stim_sel_set(Stim_Sel_t sel) {
  */
 void app_func_stim_curr_src_set(Current_Sources_t current_sources) {
 	srcSnk = current_sources;
-	if (!pulseWave1.is_running && !pulseWave2.is_running && !sineWave.is_running) {
+	if (!pulseWave1.is_running && !pulseWave2.is_running && !sineWave.is_running && !biphasicWave.is_running) {
 		HAL_GPIO_WritePin(SRC1_GPIO_Port, 	SRC1_Pin, 	(current_sources.src1)?GPIO_PIN_SET:GPIO_PIN_RESET); /* parasoft-suppress MISRAC2012-RULE_11_4-a "This definition comes from HAL." */
 		HAL_GPIO_WritePin(SRC2_GPIO_Port, 	SRC2_Pin, 	(current_sources.src2)?GPIO_PIN_SET:GPIO_PIN_RESET); /* parasoft-suppress MISRAC2012-RULE_11_4-a "This definition comes from HAL." */
 		HAL_GPIO_WritePin(SNK1_GPIO_Port, 	SNK1_Pin, 	(current_sources.snk1)?GPIO_PIN_SET:GPIO_PIN_RESET); /* parasoft-suppress MISRAC2012-RULE_11_4-a "This definition comes from HAL." */
@@ -885,6 +885,10 @@ void app_func_stim_sync(void) {
 	sineWave.train_timer_us 	= 0;
 	biphasicWave.train_timer_us	= 0;
 	biphasicWave.phase			= BIPHASIC_PHASE_CATHODIC;
+	biphasicWave.ramp.timer_us	= 0;
+	if (biphasicWave.is_running) {
+		__HAL_TIM_SET_AUTORELOAD(&HANDLE_PULSE1_TIM, biphasicWave.cathodic_width_us - 1);
+	}
 
 	__HAL_TIM_SET_COUNTER(&HANDLE_PULSE1_TIM, 0);
 	__HAL_TIM_SET_COUNTER(&HANDLE_PULSE2_TIM, 0);
@@ -1015,13 +1019,6 @@ void app_func_stim_biphasic_stop(void) {
 void app_func_stim_biphasic_cb(void) {
 	switch (biphasicWave.phase) {
 	case BIPHASIC_PHASE_CATHODIC:
-	{
-		uint32_t total_pulse_us = biphasicWave.cathodic_width_us
-								+ biphasicWave.interphase_gap_us
-								+ biphasicWave.anodic_width_us
-								+ biphasicWave.interpulse_us;
-		biphasicWave.train_timer_us = (biphasicWave.train_timer_us + total_pulse_us) % biphasicWave.train_period_us;
-
 		if (biphasicWave.interphase_gap_us > 0) {
 			biphasicWave.phase = BIPHASIC_PHASE_INTERPHASE_GAP;
 			sel_ch_srcsnk_set(biphasicWave.sel_discharge, biphasicWave.sel_enabled);
@@ -1038,7 +1035,6 @@ void app_func_stim_biphasic_cb(void) {
 			__HAL_TIM_SET_AUTORELOAD(&HANDLE_PULSE1_TIM, biphasicWave.anodic_width_us - 1);
 		}
 		break;
-	}
 
 	case BIPHASIC_PHASE_INTERPHASE_GAP:
 		biphasicWave.phase = BIPHASIC_PHASE_ANODIC;
@@ -1089,6 +1085,15 @@ void app_func_stim_biphasic_cb(void) {
 			__HAL_TIM_SET_AUTORELOAD(&HANDLE_PULSE1_TIM, biphasicWave.interpulse_us - 1);
 		}
 		else {
+			/* Advance train timer at end of full pulse cycle to ensure
+			 * cathodic and anodic phases use the same timer value,
+			 * preventing charge imbalance at train on/off boundaries. */
+			uint32_t total_pulse_us = biphasicWave.cathodic_width_us
+									+ biphasicWave.interphase_gap_us
+									+ biphasicWave.anodic_width_us
+									+ biphasicWave.interpulse_us;
+			biphasicWave.train_timer_us = (biphasicWave.train_timer_us + total_pulse_us) % biphasicWave.train_period_us;
+
 			biphasicWave.phase = BIPHASIC_PHASE_CATHODIC;
 			if (biphasicWave.train_timer_us < biphasicWave.train_on_duration_us && !biphasicWave.pause_output) {
 				sel_ch_srcsnk_set(biphasicWave.sel_cathodic, biphasicWave.sel_enabled);
@@ -1098,6 +1103,16 @@ void app_func_stim_biphasic_cb(void) {
 		break;
 
 	case BIPHASIC_PHASE_INTERPULSE:
+	{
+		/* Advance train timer at end of full pulse cycle to ensure
+		 * cathodic and anodic phases use the same timer value,
+		 * preventing charge imbalance at train on/off boundaries. */
+		uint32_t total_pulse_us = biphasicWave.cathodic_width_us
+								+ biphasicWave.interphase_gap_us
+								+ biphasicWave.anodic_width_us
+								+ biphasicWave.interpulse_us;
+		biphasicWave.train_timer_us = (biphasicWave.train_timer_us + total_pulse_us) % biphasicWave.train_period_us;
+
 		biphasicWave.phase = BIPHASIC_PHASE_CATHODIC;
 		if (biphasicWave.train_timer_us < biphasicWave.train_on_duration_us && !biphasicWave.pause_output) {
 			sel_ch_srcsnk_set(biphasicWave.sel_cathodic, biphasicWave.sel_enabled);
@@ -1107,6 +1122,7 @@ void app_func_stim_biphasic_cb(void) {
 		}
 		__HAL_TIM_SET_AUTORELOAD(&HANDLE_PULSE1_TIM, biphasicWave.cathodic_width_us - 1);
 		break;
+	}
 
 	default:
 		break;
