@@ -547,6 +547,11 @@ void app_func_stim_biphasic_start(bool imc_en) {
 		return;
 	}
 
+	/* Reject zero pulse period (would cause autoreload underflow). */
+	if (biphasicWave.pulse_period_us == 0) {
+		return;
+	}
+
 	biphasicWave.train_timer_us 	= 0;
 	biphasicWave.ramp.timer_us 		= 0;
 	biphasicWave.current_phase 		= BIPHASIC_PHASE_CATHODIC;
@@ -554,6 +559,12 @@ void app_func_stim_biphasic_start(bool imc_en) {
 	biphasicWave.imc_is_enabled		= imc_en;
 	if (biphasicWave.imc_is_enabled) {
 		biphasicWave.train_period_us = biphasicWave.train_on_duration_us;
+	}
+
+	/* Check train_period_us AFTER the IMC override above, which can
+	 * replace it with train_on_duration_us (possibly zero). */
+	if (biphasicWave.train_period_us == 0) {
+		return;
 	}
 
 	biphasicWave.sel_positive 		= stimSel.sel_ch;

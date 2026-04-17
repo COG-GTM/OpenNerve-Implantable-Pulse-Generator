@@ -28,7 +28,7 @@ static uint8_t sensor_resp_payload[LEN_RESP_PAYLOAD_MAX];
 static Cmd_Resp_t sensor_resp;
 
 extern bool vnsb_en;
-extern volatile bool biphasic_custom_en;
+extern bool biphasic_mode_en;
 
 /**
  * @brief Parser for request commands in BLE connection mode, used to communicate with the remote end
@@ -235,10 +235,10 @@ static Cmd_Resp_t app_mode_ble_conn_cmd_parser(Cmd_Req_t req) {
 			if (req.PayloadLen == len_payload_max) {
 				uint8_t mode = req.Payload[0];
 				vnsb_en = (mode == 1);
-				biphasic_custom_en = (mode == 2);
+				biphasic_mode_en = (mode == 2);
 			} else {
 				vnsb_en = false;
-				biphasic_custom_en = false;
+				biphasic_mode_en = false;
 			}
 
 			app_func_sm_schd_therapy_enable(true);
@@ -275,20 +275,20 @@ static Cmd_Resp_t app_mode_ble_conn_cmd_parser(Cmd_Req_t req) {
 			resp.Status = STATUS_USER_CLASS_ERR;
 		}
 		else {
-				if (req.PayloadLen == len_payload_max) {
-					uint8_t mode = req.Payload[0];
-					vnsb_en = (mode == 1);
-					biphasic_custom_en = (mode == 2);
-				} else {
-					vnsb_en = false;
-					biphasic_custom_en = false;
-				}
+					if (req.PayloadLen == len_payload_max) {
+						uint8_t mode = req.Payload[0];
+						vnsb_en = (mode == 1);
+						biphasic_mode_en = (mode == 2);
+					} else {
+						vnsb_en = false;
+						biphasic_mode_en = false;
+					}
 
-				if (app_mode_therapy_start() != true) {
-					resp.Status = STATUS_INVALID;
-					vnsb_en = false;
-					biphasic_custom_en = false;
-				}
+					if (app_mode_therapy_start() != true) {
+						resp.Status = STATUS_INVALID;
+						vnsb_en = false;
+						biphasic_mode_en = false;
+					}
 			else {
 				app_func_sm_schd_therapy_enable(false);
 

@@ -9,6 +9,7 @@
 static bool therapy_session_status = false;
 
 bool vnsb_en = false;
+bool biphasic_mode_en = false;
 volatile bool biphasic_custom_en = false;
 
 /**
@@ -124,8 +125,8 @@ bool app_mode_therapy_start(void) {
 			sel.sel_ch.ch3 = STIM_SEL_CH3_STIMB;
 		}
 
-		if (biphasic_custom_en) {
-			_Float64 cathodic_w, anodic_w, interphase_g, freq, train_on, train_off;
+			if (biphasic_mode_en) {
+				_Float64 cathodic_w, anodic_w, interphase_g, freq, train_on, train_off;
 			app_func_para_data_get((const uint8_t*)SPID_BIPHASIC_CATHODIC_WIDTH, (uint8_t*)&cathodic_w, sizeof(cathodic_w));
 			app_func_para_data_get((const uint8_t*)SPID_BIPHASIC_ANODIC_WIDTH, (uint8_t*)&anodic_w, sizeof(anodic_w));
 			app_func_para_data_get((const uint8_t*)SPID_BIPHASIC_INTERPHASE_GAP, (uint8_t*)&interphase_g, sizeof(interphase_g));
@@ -213,7 +214,7 @@ bool app_mode_therapy_start(void) {
 			}
 		}
 
-		if (!vnsb_en && !biphasic_custom_en) {
+		if (!vnsb_en && !biphasic_mode_en) {
 			uint8_t sns_snkP_select = (uint8_t)sns_anode_electrode_number;
 			uint8_t sns_snkN_select = (uint8_t)sns_cathode_electrode_number;
 
@@ -285,8 +286,8 @@ bool app_mode_therapy_start(void) {
 		HAL_ERROR_CHECK(app_func_stim_dac_init());
 		HAL_ERROR_CHECK(app_func_stim_dac_volt_set(0U, 0U));
 		app_func_stim_dac1_ramp_set(rampUpDuration_ms, rampDownDuration_ms, pulseDacVoltage_mv);
-		if (biphasic_custom_en) {
-			app_func_stim_biphasic_ramp_set(rampUpDuration_ms, rampDownDuration_ms, pulseDacVoltage_mv);
+			if (biphasic_mode_en) {
+				app_func_stim_biphasic_ramp_set(rampUpDuration_ms, rampDownDuration_ms, pulseDacVoltage_mv);
 		}
 
 		app_func_stim_sel_set(sel);
@@ -296,8 +297,8 @@ bool app_mode_therapy_start(void) {
 		bsp_wdg_refresh();
 
 		app_func_stim_mux_enable(true);
-		if (biphasic_custom_en) {
-			app_func_stim_biphasic_start(false);
+			if (biphasic_mode_en) {
+				app_func_stim_biphasic_start(false);
 		} else {
 			app_func_stim_stim1_start(false);
 			if (vnsb_en) {
@@ -318,6 +319,7 @@ bool app_mode_therapy_start(void) {
 void app_mode_therapy_stop(void) {
 	app_func_logs_event_write(EVENT_STIM_STOP, NULL);
 	app_func_stim_off();
+	biphasic_mode_en = false;
 	biphasic_custom_en = false;
 	therapy_session_status = false;
 }

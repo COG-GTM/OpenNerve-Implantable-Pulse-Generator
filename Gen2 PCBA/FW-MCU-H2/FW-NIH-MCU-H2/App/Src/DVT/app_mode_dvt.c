@@ -465,6 +465,13 @@ static Cmd_Resp_t app_mode_dvt_command_req_parser(Cmd_Req_t req) {
 			payload_offset = copyPayloadToStructField(payload_offset, (uint8_t*)&train_on, sizeof(train_on));
 			payload_offset = copyPayloadToStructField(payload_offset, (uint8_t*)&train_off, sizeof(train_off));
 
+				/* Reject zero pulse frequency (causes autoreload underflow)
+				 * and zero total train duration (causes div-by-zero in ISR). */
+				if (pulse_freq == 0 || (train_on == 0 && train_off == 0)) {
+					resp.Status = STATUS_INVALID;
+					break;
+				}
+
 				uint32_t bp_cathodic = (uint32_t)cathodic_w;
 				uint32_t bp_anodic   = (uint32_t)anodic_w;
 				uint32_t bp_gap      = (uint32_t)interphase_g;
