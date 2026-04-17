@@ -5,6 +5,9 @@
  */
 #include "DAC8050x_driver.h"
 
+#define DAC8050x_RESOLUTION_MAX	0xFFFFU		/*!< 16-bit DAC maximum output code */
+
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 uint16_t DAC8050x_vout = 0U;
 
 /**
@@ -34,6 +37,7 @@ DAC8050x_format_t DAC8050x_format_get(uint8_t reg, uint16_t data) {
  * @param gain Gain of output, 1 or 2
  * @return uint16_t 
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 uint16_t DAC8050x_dac_vout_to_data(uint16_t vout_mv, uint16_t vref_mv, uint8_t ref_div, uint8_t gain) {
 	if (vout_mv > vref_mv) {
 		DAC8050x_vout = vref_mv;
@@ -41,6 +45,6 @@ uint16_t DAC8050x_dac_vout_to_data(uint16_t vout_mv, uint16_t vref_mv, uint8_t r
 	else {
 		DAC8050x_vout = vout_mv;
 	}
-	_Float64 data = (_Float64)DAC8050x_vout / (_Float64)gain * (_Float64)ref_div / (_Float64)vref_mv * (_Float64)0xFFFF;
+	_Float64 data = (_Float64)DAC8050x_vout / (_Float64)gain * (_Float64)ref_div / (_Float64)vref_mv * (_Float64)DAC8050x_RESOLUTION_MAX;
 	return (uint16_t)data;
 }
