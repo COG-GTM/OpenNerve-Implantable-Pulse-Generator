@@ -121,6 +121,8 @@
 #define OP_STOP_ACC                					0x49U	/*!< The opcode of the command "STOP_ACC" */
 #define OP_ENABLE_VCHG_RAIL_SUPPLY                	0x4AU	/*!< The opcode of the command "ENABLE_VCHG_RAIL_SUPPLY" */
 #define OP_DISABLE_VCHG_RAIL_SUPPLY                	0x4BU	/*!< The opcode of the command "DISABLE_VCHG_RAIL_SUPPLY" */
+#define OP_SET_BIPHASIC_STIMULUS_PARAMETERS         	0x4CU	/*!< The opcode of the command "SET_BIPHASIC_STIMULUS_PARAMETERS" */
+#define OP_GET_BIPHASIC_STIMULUS_PARAMETERS         	0x4DU	/*!< The opcode of the command "GET_BIPHASIC_STIMULUS_PARAMETERS" */
 
 //Status of Response Commands
 #define STATUS_SUCCESS            					0x00U	/*!< Code for success status */

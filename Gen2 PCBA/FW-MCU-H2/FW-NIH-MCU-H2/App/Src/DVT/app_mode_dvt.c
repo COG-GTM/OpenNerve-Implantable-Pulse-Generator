@@ -1570,6 +1570,52 @@ static Cmd_Resp_t app_mode_dvt_command_req_parser(Cmd_Req_t req) {
 	}
 		break;
 
+	case OP_SET_BIPHASIC_STIMULUS_PARAMETERS:
+	{
+		len_payload = 24;
+		if (req.PayloadLen != len_payload) {
+			resp.Status = STATUS_PAYLOAD_LEN_ERR;
+		}
+		else {
+			BiphasicStimulus_Waveform_t biphasicpara;
+			uint8_t* payload_offset = req.Payload;
+			payload_offset = copyPayloadToStructField (payload_offset, (uint8_t*)&biphasicpara.positiveWidth_us, sizeof(biphasicpara.positiveWidth_us));
+			payload_offset = copyPayloadToStructField (payload_offset, (uint8_t*)&biphasicpara.negativeWidth_us, sizeof(biphasicpara.negativeWidth_us));
+			payload_offset = copyPayloadToStructField (payload_offset, (uint8_t*)&biphasicpara.interphaseGap_us, sizeof(biphasicpara.interphaseGap_us));
+			payload_offset = copyPayloadToStructField (payload_offset, (uint8_t*)&biphasicpara.pulsePeriod_us, sizeof(biphasicpara.pulsePeriod_us));
+			payload_offset = copyPayloadToStructField (payload_offset, (uint8_t*)&biphasicpara.trainOnDuration_ms, sizeof(biphasicpara.trainOnDuration_ms));
+			payload_offset = copyPayloadToStructField (payload_offset, (uint8_t*)&biphasicpara.trainOffDuration_ms, sizeof(biphasicpara.trainOffDuration_ms));
+
+			app_func_stim_biphasic_para_set(biphasicpara);
+		}
+	}
+		break;
+
+	case OP_GET_BIPHASIC_STIMULUS_PARAMETERS:
+	{
+		len_payload = 0;
+		if (req.PayloadLen != len_payload) {
+			resp.Status = STATUS_PAYLOAD_LEN_ERR;
+		}
+		else {
+			extern BiphasicPulseWave_t biphasicWave;
+			uint8_t resp_payload[24];
+			uint8_t* payload_offset = resp_payload;
+			payload_offset = copyStructFieldToPayload(payload_offset, (uint8_t*)&biphasicWave.positive_width_us, sizeof(biphasicWave.positive_width_us));
+			payload_offset = copyStructFieldToPayload(payload_offset, (uint8_t*)&biphasicWave.negative_width_us, sizeof(biphasicWave.negative_width_us));
+			payload_offset = copyStructFieldToPayload(payload_offset, (uint8_t*)&biphasicWave.interphase_gap_us, sizeof(biphasicWave.interphase_gap_us));
+			payload_offset = copyStructFieldToPayload(payload_offset, (uint8_t*)&biphasicWave.pwm_period_us, sizeof(biphasicWave.pwm_period_us));
+			uint32_t trainOn_ms = biphasicWave.train_on_duration_us / 1000;
+			uint32_t trainOff_ms = (biphasicWave.train_period_us - biphasicWave.train_on_duration_us) / 1000;
+			payload_offset = copyStructFieldToPayload(payload_offset, (uint8_t*)&trainOn_ms, sizeof(trainOn_ms));
+			payload_offset = copyStructFieldToPayload(payload_offset, (uint8_t*)&trainOff_ms, sizeof(trainOff_ms));
+
+			resp.PayloadLen = payload_offset - resp_payload;
+			resp.Payload = resp_payload;
+		}
+	}
+		break;
+
 	default:
 	{
 		resp.Status = STATUS_OPCODE_ERR;
