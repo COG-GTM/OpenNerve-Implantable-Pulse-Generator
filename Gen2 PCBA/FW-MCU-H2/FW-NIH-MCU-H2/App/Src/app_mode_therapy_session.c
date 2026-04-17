@@ -9,6 +9,8 @@
 static bool therapy_session_status = false;
 
 bool vnsb_en = false;
+bool biphasic_mode_en = false;
+volatile bool biphasic_custom_en = false;
 
 /**
  * @brief Start therapy session and check for short circuit events
@@ -122,7 +124,96 @@ bool app_mode_therapy_start(void) {
 			sel.sel_ch.ch1 = STIM_SEL_CH1_STIMA;
 			sel.sel_ch.ch3 = STIM_SEL_CH3_STIMB;
 		}
-		else {
+		else if (biphasic_mode_en) {
+				_Float64 cathodic_w, anodic_w, interphase_g, freq, train_on, train_off;
+			app_func_para_data_get((const uint8_t*)SPID_BIPHASIC_CATHODIC_WIDTH, (uint8_t*)&cathodic_w, sizeof(cathodic_w));
+			app_func_para_data_get((const uint8_t*)SPID_BIPHASIC_ANODIC_WIDTH, (uint8_t*)&anodic_w, sizeof(anodic_w));
+			app_func_para_data_get((const uint8_t*)SPID_BIPHASIC_INTERPHASE_GAP, (uint8_t*)&interphase_g, sizeof(interphase_g));
+			app_func_para_data_get((const uint8_t*)SPID_BIPHASIC_PULSE_FREQUENCY, (uint8_t*)&freq, sizeof(freq));
+			app_func_para_data_get((const uint8_t*)SPID_BIPHASIC_TRAIN_ON_DURATION, (uint8_t*)&train_on, sizeof(train_on));
+			app_func_para_data_get((const uint8_t*)SPID_BIPHASIC_TRAIN_OFF_DURATION, (uint8_t*)&train_off, sizeof(train_off));
+
+			uint32_t biphasic_period_us = (freq > 0.0) ? (uint32_t)(1000000.0 / freq) : 0;
+			uint32_t biphasic_cathodic_us = (uint32_t)cathodic_w;
+			uint32_t biphasic_anodic_us   = (uint32_t)anodic_w;
+			uint32_t biphasic_gap_us      = (uint32_t)interphase_g;
+			uint32_t biphasic_active_us   = biphasic_cathodic_us + biphasic_gap_us + biphasic_anodic_us;
+
+			/* Clamp total active phase duration to fit within the pulse period */
+			if (biphasic_active_us > 0 && biphasic_period_us > 0 && biphasic_active_us >= biphasic_period_us) {
+				_Float64 scale = (_Float64)(biphasic_period_us - 1) / (_Float64)biphasic_active_us;
+				biphasic_cathodic_us = (uint32_t)(biphasic_cathodic_us * scale);
+				biphasic_anodic_us   = (uint32_t)(biphasic_anodic_us   * scale);
+				biphasic_gap_us      = (uint32_t)(biphasic_gap_us      * scale);
+			}
+
+			BiphasicCustom_Waveform_t biphasic_para = {
+				.cathodicWidth_us 		= biphasic_cathodic_us,
+				.anodicWidth_us 		= biphasic_anodic_us,
+				.interphaseGap_us 		= biphasic_gap_us,
+				.pulsePeriod_us 		= biphasic_period_us,
+				.trainOnDuration_ms 	= (uint32_t)(train_on * 1000.0),
+				.trainOffDuration_ms 	= (uint32_t)(train_off * 1000.0),
+			};
+			app_func_stim_biphasic_para_set(biphasic_para);
+
+			/* Electrode configuration for biphasic mode — uses same cathode/anode params */
+			uint8_t sns_snkP_select = (uint8_t)sns_anode_electrode_number;
+			uint8_t sns_snkN_select = (uint8_t)sns_cathode_electrode_number;
+
+			switch(sns_snkP_select) {
+			case 1:
+				configuration.snk1 = true;
+				sel.stimA = STIMA_SEL_STIM1;
+				sel.stimB = STIMB_SEL_STIM2;
+				sel.sel_ch.ch1 = STIM_SEL_CH1_STIMA;
+				break;
+			case 2:
+				configuration.snk2 = true;
+				sel.stimA = STIMA_SEL_STIM1;
+				sel.stimB = STIMB_SEL_STIM2;
+				sel.sel_ch.ch2 = STIM_SEL_CH2_STIMA;
+				break;
+			case 3:
+				configuration.snk3 = true;
+				sel.stimA = STIMA_SEL_STIM2;
+				sel.stimB = STIMB_SEL_STIM1;
+				sel.sel_ch.ch3 = STIM_SEL_CH3_STIMB;
+				break;
+			case 4:
+				configuration.snk4 = true;
+				sel.stimA = STIMA_SEL_STIM2;
+				sel.stimB = STIMB_SEL_STIM1;
+				sel.sel_ch.ch4 = STIM_SEL_CH4_STIMB;
+				break;
+			case 5:
+				configuration.snk5 = true;
+				sel.stimA = STIMA_SEL_STIM1;
+				sel.stimB = STIMB_SEL_STIM2;
+				sel.sel_ch.encl = STIM_SEL_ENCL_STIMA;
+				break;
+			}
+
+			switch(sns_snkN_select) {
+			case 1:
+				configuration.snk1 = true;
+				break;
+			case 2:
+				configuration.snk2 = true;
+				break;
+			case 3:
+				configuration.snk3 = true;
+				break;
+			case 4:
+				configuration.snk4 = true;
+				break;
+			case 5:
+				configuration.snk5 = true;
+				break;
+			}
+		}
+
+		if (!vnsb_en && !biphasic_mode_en) {
 			uint8_t sns_snkP_select = (uint8_t)sns_anode_electrode_number;
 			uint8_t sns_snkN_select = (uint8_t)sns_cathode_electrode_number;
 
@@ -194,6 +285,9 @@ bool app_mode_therapy_start(void) {
 		HAL_ERROR_CHECK(app_func_stim_dac_init());
 		HAL_ERROR_CHECK(app_func_stim_dac_volt_set(0U, 0U));
 		app_func_stim_dac1_ramp_set(rampUpDuration_ms, rampDownDuration_ms, pulseDacVoltage_mv);
+			if (biphasic_mode_en) {
+				app_func_stim_biphasic_ramp_set(rampUpDuration_ms, rampDownDuration_ms, pulseDacVoltage_mv);
+		}
 
 		app_func_stim_sel_set(sel);
 		app_func_stim_stimulus_enable(true);
@@ -202,10 +296,14 @@ bool app_mode_therapy_start(void) {
 		bsp_wdg_refresh();
 
 		app_func_stim_mux_enable(true);
-		app_func_stim_stim1_start(false);
-		if (vnsb_en) {
-			app_func_stim_sine_start();
-			app_func_stim_sync();
+			if (biphasic_mode_en) {
+				app_func_stim_biphasic_start(false);
+		} else {
+			app_func_stim_stim1_start(false);
+			if (vnsb_en) {
+				app_func_stim_sine_start();
+				app_func_stim_sync();
+			}
 		}
 		therapy_session_status = true;
 		app_func_logs_event_write(EVENT_STIM_START, NULL);
@@ -220,6 +318,8 @@ bool app_mode_therapy_start(void) {
 void app_mode_therapy_stop(void) {
 	app_func_logs_event_write(EVENT_STIM_STOP, NULL);
 	app_func_stim_off();
+	biphasic_mode_en = false;
+	biphasic_custom_en = false;
 	therapy_session_status = false;
 }
 

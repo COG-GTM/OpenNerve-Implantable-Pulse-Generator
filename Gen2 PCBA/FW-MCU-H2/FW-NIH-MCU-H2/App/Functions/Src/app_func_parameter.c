@@ -128,6 +128,12 @@ static Parameter_Format_Value_t format_max_safe_sine_amplitude	= {2.0, 	2.0, 	2.
 static Parameter_Format_Value_t format_sine_frequency			= {0.5, 	15.0, 	2.5, 	0.1};
 static Parameter_Format_Value_t format_vnsb_on_duration			= {1.0, 	600.0, 	10.0, 	1.0};
 static Parameter_Format_Value_t format_vnsb_off_duration		= {0.0, 	600.0, 	10.0, 	1.0};
+static Parameter_Format_Value_t format_biphasic_cathodic_width		= {50.0, 	1000.0,	200.0, 	10.0};
+static Parameter_Format_Value_t format_biphasic_anodic_width		= {50.0, 	1000.0,	200.0, 	10.0};
+static Parameter_Format_Value_t format_biphasic_interphase_gap		= {0.0, 	500.0,	50.0, 	10.0};
+static Parameter_Format_Value_t format_biphasic_pulse_frequency		= {1.0, 	2000.0, 30.0, 	1.0};
+static Parameter_Format_Value_t format_biphasic_train_on_duration	= {1.0, 	600.0, 	30.0, 	1.0};
+static Parameter_Format_Value_t format_biphasic_train_off_duration	= {0.0, 	600.0, 	30.0, 	1.0};
 
 static Parameter_Format_Value_t format_therapy_session_1_start	= {0.0, 	1438.0, 480.0, 	1.0};
 static Parameter_Format_Value_t format_therapy_session_1_stop	= {1.0, 	1439.0, 510.0, 	1.0};
@@ -198,6 +204,12 @@ Parameter_t parameters_list[] = {
 		{SPID_SINE_FREQUENCY,				0U,	{NULL, &format_sine_frequency}},
 		{SPID_VNSB_ON_DURATION,				0U,	{NULL, &format_vnsb_on_duration}},
 		{SPID_VNSB_OFF_DURATION,			0U,	{NULL, &format_vnsb_off_duration}},
+		{SPID_BIPHASIC_CATHODIC_WIDTH,		0U,	{NULL, &format_biphasic_cathodic_width}},
+		{SPID_BIPHASIC_ANODIC_WIDTH,		0U,	{NULL, &format_biphasic_anodic_width}},
+		{SPID_BIPHASIC_INTERPHASE_GAP,		0U,	{NULL, &format_biphasic_interphase_gap}},
+		{SPID_BIPHASIC_PULSE_FREQUENCY,		0U,	{NULL, &format_biphasic_pulse_frequency}},
+		{SPID_BIPHASIC_TRAIN_ON_DURATION,	0U,	{NULL, &format_biphasic_train_on_duration}},
+		{SPID_BIPHASIC_TRAIN_OFF_DURATION,	0U,	{NULL, &format_biphasic_train_off_duration}},
 
 		{SPID_THERAPY_SESSION_1_START,		0U,	{NULL, &format_therapy_session_1_start}},
 		{SPID_THERAPY_SESSION_1_STOP,		0U,	{NULL, &format_therapy_session_1_stop}},

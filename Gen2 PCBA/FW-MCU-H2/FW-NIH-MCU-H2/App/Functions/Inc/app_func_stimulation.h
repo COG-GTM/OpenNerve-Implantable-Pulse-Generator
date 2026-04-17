@@ -38,6 +38,7 @@ typedef enum
 	BEFORE_HIGH = 0U,
 	TO_HIGH,
 	TO_LOW,
+	ANODIC_END,
 } PWM_InterruptState;
 
 typedef enum
@@ -53,6 +54,15 @@ typedef struct {
 	uint32_t 	trainOnDuration_ms;			/*!< The train on duration of the stimulus waveform, unit: ms */
 	uint32_t 	trainOffDuration_ms;		/*!< The train off duration of the stimulus waveform, unit: ms */
 } Stimulus_Waveform_t;
+
+typedef struct {
+	uint32_t 	cathodicWidth_us;			/*!< Cathodic phase pulse width, unit: us */
+	uint32_t 	anodicWidth_us;				/*!< Anodic phase pulse width, unit: us */
+	uint32_t 	interphaseGap_us;			/*!< Gap between cathodic and anodic phases, unit: us */
+	uint32_t 	pulsePeriod_us;				/*!< Overall pulse period, unit: us */
+	uint32_t 	trainOnDuration_ms;			/*!< Train on duration, unit: ms */
+	uint32_t 	trainOffDuration_ms;		/*!< Train off duration, unit: ms */
+} BiphasicCustom_Waveform_t;
 
 typedef struct {
 	uint32_t	sinePeriod_us;				/*!< The period of the sine waveform, unit: us */
@@ -132,6 +142,36 @@ typedef struct {
 
 	Ramp_t 		ramp;							/*!< Ramp up and down settings. */
 } PulseWave_t;
+
+typedef enum {
+	BIPHASIC_PHASE_CATHODIC,
+	BIPHASIC_PHASE_INTERPHASE_GAP,
+	BIPHASIC_PHASE_ANODIC,
+	BIPHASIC_PHASE_IDLE
+} BiphasicPhase_t;
+
+typedef struct {
+	uint32_t 	cathodic_width_us;
+	uint32_t 	anodic_width_us;
+	uint32_t 	interphase_gap_us;
+	uint32_t 	pulse_period_us;
+
+	uint32_t 	train_period_us;
+	uint32_t 	train_on_duration_us;
+	uint32_t 	train_timer_us;
+
+	BiphasicPhase_t current_phase;
+	bool		is_running;
+
+	Stim_Sel_Ch_t sel_positive;
+	Stim_Sel_Ch_t sel_negative;
+	Stim_Sel_Ch_t sel_discharge;
+	Stim_Sel_Ch_t sel_enabled;
+
+	bool		pause_output;
+	bool		imc_is_enabled;
+	Ramp_t 		ramp;
+} BiphasicWave_t;
 
 typedef struct {
 	uint32_t tim_cnt;							/*!< The timer counts of the point on the sine period */
@@ -331,6 +371,42 @@ void app_func_stim_sine_stop(void);
  * @param state Callback state
  */
 void app_func_stim_sine_cb(SINE_InterruptState state);
+
+/**
+ * @brief Set the waveform settings of biphasic custom waveform
+ *
+ * @param waveform The waveform settings
+ */
+void app_func_stim_biphasic_para_set(BiphasicCustom_Waveform_t waveform);
+
+/**
+ * @brief Set the ramp settings for the biphasic custom waveform DAC
+ *
+ * @param ramp_up_duration_ms The duration of the ramp up, unit: ms
+ * @param ramp_down_duration_ms The duration of the ramp down, unit: ms
+ * @param voltage_mv The max voltage of VOUTA, unit: mV
+ */
+void app_func_stim_biphasic_ramp_set(uint32_t ramp_up_duration_ms, uint32_t ramp_down_duration_ms, uint16_t voltage_mv);
+
+/**
+ * @brief Generate biphasic custom waveform based on waveform settings
+ *
+ * @param imc_en The enabled status of IMC
+ */
+void app_func_stim_biphasic_start(bool imc_en);
+
+/**
+ * @brief Stop biphasic custom waveform
+ *
+ */
+void app_func_stim_biphasic_stop(void);
+
+/**
+ * @brief Timer callback of biphasic custom waveform
+ *
+ * @param state Callback state
+ */
+void app_func_stim_biphasic_cb(PWM_InterruptState state);
 
 /**
  * @brief Synchronizes the timers of all waveforms.

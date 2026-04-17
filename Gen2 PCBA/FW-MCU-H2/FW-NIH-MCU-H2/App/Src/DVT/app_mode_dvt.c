@@ -13,17 +13,21 @@ static uint8_t hvSupplyTurnOn = 0;
 static bool shutdown = false;
 static bool sw_reset = false;
 
+extern volatile bool biphasic_custom_en;
+
 typedef struct {
 	bool src1;
 	bool src2;
 	bool vnsb_en;
 	bool imp_en;
+	bool biphasic_en;
 } Mocked_t;
 static Mocked_t mocked = {
 		.src1 = false,
 		.src2 = false,
 		.vnsb_en = false,
 		.imp_en = false,
+		.biphasic_en = false,
 };
 
 static TestInformation_t TestInformation = {
@@ -413,9 +417,11 @@ static Cmd_Resp_t app_mode_dvt_command_req_parser(Cmd_Req_t req) {
 					.trainOnDuration_ms 	= StimulusCircuitParameters.stimDurationVNS_ms,
 					.trainOffDuration_ms 	= StimulusCircuitParameters.stimDurationVNS_ms,
 			};
-			app_func_stim_circuit_para1_set(para1);
-			app_func_stim_circuit_para2_set(para2);
-			app_func_stim_sine_para_set(sine_para);
+				app_func_stim_biphasic_stop();
+				app_func_stim_circuit_para1_set(para1);
+				app_func_stim_circuit_para2_set(para2);
+				app_func_stim_sine_para_set(sine_para);
+				mocked.biphasic_en = false;
 		}
 	}
 		break;
@@ -440,6 +446,57 @@ static Cmd_Resp_t app_mode_dvt_command_req_parser(Cmd_Req_t req) {
 
 			resp.PayloadLen = payload_offset - resp_payload;
 			resp.Payload = resp_payload;
+		}
+	}
+		break;
+
+	case OP_SET_BIPHASIC_PARAMETERS:
+	{
+		len_payload = 12;
+		if (req.PayloadLen != len_payload) {
+			resp.Status = STATUS_PAYLOAD_LEN_ERR;
+		}
+		else {
+			uint16_t cathodic_w, anodic_w, interphase_g, pulse_freq, train_on, train_off;
+			uint8_t* payload_offset = req.Payload;
+			payload_offset = copyPayloadToStructField(payload_offset, (uint8_t*)&cathodic_w, sizeof(cathodic_w));
+			payload_offset = copyPayloadToStructField(payload_offset, (uint8_t*)&anodic_w, sizeof(anodic_w));
+			payload_offset = copyPayloadToStructField(payload_offset, (uint8_t*)&interphase_g, sizeof(interphase_g));
+			payload_offset = copyPayloadToStructField(payload_offset, (uint8_t*)&pulse_freq, sizeof(pulse_freq));
+			payload_offset = copyPayloadToStructField(payload_offset, (uint8_t*)&train_on, sizeof(train_on));
+			payload_offset = copyPayloadToStructField(payload_offset, (uint8_t*)&train_off, sizeof(train_off));
+
+				/* Reject zero pulse frequency (causes autoreload underflow)
+				 * and zero total train duration (causes div-by-zero in ISR). */
+				if (pulse_freq == 0 || (train_on == 0 && train_off == 0)) {
+					resp.Status = STATUS_INVALID;
+					break;
+				}
+
+				uint32_t bp_cathodic = (uint32_t)cathodic_w;
+				uint32_t bp_anodic   = (uint32_t)anodic_w;
+				uint32_t bp_gap      = (uint32_t)interphase_g;
+				uint32_t bp_period   = (pulse_freq > 0) ? (uint32_t)(1000000.0 / (_Float64)pulse_freq) : 0;
+				uint32_t bp_active   = bp_cathodic + bp_gap + bp_anodic;
+
+				/* Clamp active phase widths so they fit within the pulse period */
+				if (bp_active > 0 && bp_period > 0 && bp_active >= bp_period) {
+					uint32_t bp_max = bp_period - 1;
+					bp_cathodic = (uint32_t)((_Float64)bp_cathodic * bp_max / bp_active);
+					bp_anodic   = (uint32_t)((_Float64)bp_anodic   * bp_max / bp_active);
+					bp_gap      = (uint32_t)((_Float64)bp_gap      * bp_max / bp_active);
+				}
+
+				BiphasicCustom_Waveform_t biphasic_para = {
+						.cathodicWidth_us 		= bp_cathodic,
+						.anodicWidth_us 		= bp_anodic,
+						.interphaseGap_us 		= bp_gap,
+						.pulsePeriod_us 		= bp_period,
+						.trainOnDuration_ms 	= (uint32_t)train_on,
+						.trainOffDuration_ms 	= (uint32_t)train_off,
+				};
+				app_func_stim_biphasic_para_set(biphasic_para);
+				mocked.biphasic_en = true;
 		}
 	}
 		break;
@@ -569,15 +626,19 @@ static Cmd_Resp_t app_mode_dvt_command_req_parser(Cmd_Req_t req) {
 			resp.Status = STATUS_PAYLOAD_LEN_ERR;
 		}
 		else {
-			if (mocked.src1) {
-				app_func_stim_stim1_start(mocked.imp_en);
-			}
-			if (mocked.src2) {
-				if (mocked.vnsb_en) {
-					app_func_stim_sine_start();
+			if (mocked.biphasic_en) {
+				app_func_stim_biphasic_start(mocked.imp_en);
+			} else {
+				if (mocked.src1) {
+					app_func_stim_stim1_start(mocked.imp_en);
 				}
-				else {
-					app_func_stim_stim2_start();
+				if (mocked.src2) {
+					if (mocked.vnsb_en) {
+						app_func_stim_sine_start();
+					}
+					else {
+						app_func_stim_stim2_start();
+					}
 				}
 			}
 			app_func_stim_sync();

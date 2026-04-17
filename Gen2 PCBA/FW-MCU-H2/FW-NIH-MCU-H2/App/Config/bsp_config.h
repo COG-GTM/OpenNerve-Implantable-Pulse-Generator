@@ -59,6 +59,7 @@
 #define TIM_CH_PULSE2_TO_LOW			TIM_CHANNEL_1	/*!< The timer channel for pulse2 */
 #define TIM_CH_PULSE1_BEF_HI			TIM_CHANNEL_2	/*!< The timer channel for pulse1 */
 #define TIM_CH_PULSE2_BEF_HI			TIM_CHANNEL_2	/*!< The timer channel for pulse2 */
+#define TIM_CH_PULSE2_ANOD_END			TIM_CHANNEL_3	/*!< The timer channel for biphasic anodic phase end */
 #define TIM_CH_SINE_POLR				TIM_CHANNEL_1	/*!< The timer channel for sine waveform polarity */
 #define TIM_CH_SINE_AMP					TIM_CHANNEL_2	/*!< The timer channel for sine waveform amplitude */
 
@@ -66,6 +67,7 @@
 #define TIM_ACH_PULSE2_TO_LOW			HAL_TIM_ACTIVE_CHANNEL_1
 #define TIM_ACH_PULSE1_BEF_HI			HAL_TIM_ACTIVE_CHANNEL_2
 #define TIM_ACH_PULSE2_BEF_HI			HAL_TIM_ACTIVE_CHANNEL_2
+#define TIM_ACH_PULSE2_ANOD_END			HAL_TIM_ACTIVE_CHANNEL_3
 #define TIM_ACH_SINE_POLR				HAL_TIM_ACTIVE_CHANNEL_1
 #define TIM_ACH_SINE_AMP				HAL_TIM_ACTIVE_CHANNEL_2
 
