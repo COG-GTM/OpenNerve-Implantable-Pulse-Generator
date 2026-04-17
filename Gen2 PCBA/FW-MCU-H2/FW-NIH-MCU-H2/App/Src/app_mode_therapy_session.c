@@ -142,6 +142,61 @@ bool app_mode_therapy_start(void) {
 				.trainOffDuration_ms 	= (uint32_t)(train_off * 1000.0),
 			};
 			app_func_stim_biphasic_para_set(biphasic_para);
+
+			/* Electrode configuration for biphasic mode — uses same cathode/anode params */
+			uint8_t sns_snkP_select = (uint8_t)sns_anode_electrode_number;
+			uint8_t sns_snkN_select = (uint8_t)sns_cathode_electrode_number;
+
+			switch(sns_snkP_select) {
+			case 1:
+				configuration.snk1 = true;
+				sel.stimA = STIMA_SEL_STIM1;
+				sel.stimB = STIMB_SEL_STIM2;
+				sel.sel_ch.ch1 = STIM_SEL_CH1_STIMA;
+				break;
+			case 2:
+				configuration.snk2 = true;
+				sel.stimA = STIMA_SEL_STIM1;
+				sel.stimB = STIMB_SEL_STIM2;
+				sel.sel_ch.ch2 = STIM_SEL_CH2_STIMA;
+				break;
+			case 3:
+				configuration.snk3 = true;
+				sel.stimA = STIMA_SEL_STIM2;
+				sel.stimB = STIMB_SEL_STIM1;
+				sel.sel_ch.ch3 = STIM_SEL_CH3_STIMB;
+				break;
+			case 4:
+				configuration.snk4 = true;
+				sel.stimA = STIMA_SEL_STIM2;
+				sel.stimB = STIMB_SEL_STIM1;
+				sel.sel_ch.ch4 = STIM_SEL_CH4_STIMB;
+				break;
+			case 5:
+				configuration.snk5 = true;
+				sel.stimA = STIMA_SEL_STIM1;
+				sel.stimB = STIMB_SEL_STIM2;
+				sel.sel_ch.encl = STIM_SEL_ENCL_STIMA;
+				break;
+			}
+
+			switch(sns_snkN_select) {
+			case 1:
+				configuration.snk1 = true;
+				break;
+			case 2:
+				configuration.snk2 = true;
+				break;
+			case 3:
+				configuration.snk3 = true;
+				break;
+			case 4:
+				configuration.snk4 = true;
+				break;
+			case 5:
+				configuration.snk5 = true;
+				break;
+			}
 		}
 
 		if (!vnsb_en && !biphasic_custom_en) {
@@ -216,6 +271,9 @@ bool app_mode_therapy_start(void) {
 		HAL_ERROR_CHECK(app_func_stim_dac_init());
 		HAL_ERROR_CHECK(app_func_stim_dac_volt_set(0U, 0U));
 		app_func_stim_dac1_ramp_set(rampUpDuration_ms, rampDownDuration_ms, pulseDacVoltage_mv);
+		if (biphasic_custom_en) {
+			app_func_stim_biphasic_ramp_set(rampUpDuration_ms, rampDownDuration_ms, pulseDacVoltage_mv);
+		}
 
 		app_func_stim_sel_set(sel);
 		app_func_stim_stimulus_enable(true);

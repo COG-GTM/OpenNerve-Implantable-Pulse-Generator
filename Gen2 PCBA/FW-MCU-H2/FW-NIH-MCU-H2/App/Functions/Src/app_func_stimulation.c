@@ -329,6 +329,26 @@ void app_func_stim_dac1_ramp_set(uint32_t ramp_up_duration_ms, uint32_t ramp_dow
 }
 
 /**
+ * @brief Set the ramp settings for the biphasic custom waveform DAC
+ *
+ * @param ramp_up_duration_ms The duration of the ramp up, unit: ms
+ * @param ramp_down_duration_ms The duration of the ramp down, unit: ms
+ * @param voltage_mv The max voltage of VOUTA, unit: mV
+ */
+void app_func_stim_biphasic_ramp_set(uint32_t ramp_up_duration_ms, uint32_t ramp_down_duration_ms, uint16_t voltage_mv) {
+	biphasicWave.ramp.rampUpDuration_us 	= ramp_up_duration_ms * 1000;
+	biphasicWave.ramp.rampDownDuration_us 	= ramp_down_duration_ms * 1000;
+	biphasicWave.ramp.max_amplitude_mV 		= voltage_mv;
+	biphasicWave.ramp.curr_amplitude_mV 	= 0;
+
+	biphasicWave.ramp.rampUpStart_us = 0;
+	biphasicWave.ramp.rampUpEnd_us = biphasicWave.ramp.rampUpStart_us + biphasicWave.ramp.rampUpDuration_us;
+	biphasicWave.ramp.rampDownStart_us = biphasicWave.train_on_duration_us - biphasicWave.ramp.rampDownDuration_us;
+	biphasicWave.ramp.rampDownEnd_us = biphasicWave.train_on_duration_us;
+	biphasicWave.ramp.period_us = biphasicWave.train_period_us;
+}
+
+/**
  * @brief   Calculate the required VDAC voltage to achieve a target output current
  *          in the current mirror circuit.
  *
@@ -417,7 +437,7 @@ void app_func_stim_sel_set(Stim_Sel_t sel) {
  */
 void app_func_stim_curr_src_set(Current_Sources_t current_sources) {
 	srcSnk = current_sources;
-	if (!pulseWave1.is_running && !pulseWave2.is_running && !sineWave.is_running) {
+	if (!pulseWave1.is_running && !pulseWave2.is_running && !sineWave.is_running && !biphasicWave.is_running) {
 		HAL_GPIO_WritePin(SRC1_GPIO_Port, 	SRC1_Pin, 	(current_sources.src1)?GPIO_PIN_SET:GPIO_PIN_RESET); /* parasoft-suppress MISRAC2012-RULE_11_4-a "This definition comes from HAL." */
 		HAL_GPIO_WritePin(SRC2_GPIO_Port, 	SRC2_Pin, 	(current_sources.src2)?GPIO_PIN_SET:GPIO_PIN_RESET); /* parasoft-suppress MISRAC2012-RULE_11_4-a "This definition comes from HAL." */
 		HAL_GPIO_WritePin(SNK1_GPIO_Port, 	SNK1_Pin, 	(current_sources.snk1)?GPIO_PIN_SET:GPIO_PIN_RESET); /* parasoft-suppress MISRAC2012-RULE_11_4-a "This definition comes from HAL." */
@@ -485,6 +505,8 @@ void app_func_stim_biphasic_para_set(BiphasicCustom_Waveform_t waveform) {
 		__HAL_TIM_SET_COMPARE(&HANDLE_PULSE2_TIM, TIM_CH_PULSE2_TO_LOW, biphasicWave.cathodic_width_us);
 		__HAL_TIM_SET_COMPARE(&HANDLE_PULSE2_TIM, TIM_CH_PULSE2_BEF_HI,
 				biphasicWave.cathodic_width_us + biphasicWave.interphase_gap_us);
+		__HAL_TIM_SET_COMPARE(&HANDLE_PULSE2_TIM, TIM_CH_PULSE2_ANOD_END,
+				biphasicWave.cathodic_width_us + biphasicWave.interphase_gap_us + biphasicWave.anodic_width_us);
 		app_func_stim_sync();
 	}
 }
@@ -547,6 +569,11 @@ void app_func_stim_biphasic_start(bool imc_en) {
 	__HAL_TIM_SET_COMPARE(&HANDLE_PULSE2_TIM, TIM_CH_PULSE2_BEF_HI,
 			biphasicWave.cathodic_width_us + biphasicWave.interphase_gap_us);
 	HAL_ERROR_CHECK(HAL_TIM_OC_Start_IT(&HANDLE_PULSE2_TIM, TIM_CH_PULSE2_BEF_HI));
+
+	/* Channel 3: end of anodic phase */
+	__HAL_TIM_SET_COMPARE(&HANDLE_PULSE2_TIM, TIM_CH_PULSE2_ANOD_END,
+			biphasicWave.cathodic_width_us + biphasicWave.interphase_gap_us + biphasicWave.anodic_width_us);
+	HAL_ERROR_CHECK(HAL_TIM_OC_Start_IT(&HANDLE_PULSE2_TIM, TIM_CH_PULSE2_ANOD_END));
 
 	__HAL_TIM_SET_COUNTER(&HANDLE_PULSE2_TIM, 0);
 	biphasicWave.is_running = true;
@@ -717,6 +744,7 @@ void app_func_stim_biphasic_stop(void) {
 		HAL_ERROR_CHECK(HAL_TIM_Base_Stop_IT(&HANDLE_PULSE2_TIM));
 		HAL_ERROR_CHECK(HAL_TIM_PWM_Stop_IT(&HANDLE_PULSE2_TIM, TIM_CH_PULSE2_TO_LOW));
 		HAL_ERROR_CHECK(HAL_TIM_OC_Stop_IT(&HANDLE_PULSE2_TIM, TIM_CH_PULSE2_BEF_HI));
+		HAL_ERROR_CHECK(HAL_TIM_OC_Stop_IT(&HANDLE_PULSE2_TIM, TIM_CH_PULSE2_ANOD_END));
 		(void)memset(&biphasicWave, 0, sizeof(biphasicWave));
 	}
 }
@@ -829,7 +857,7 @@ void app_func_stim_stim2_cb(PWM_InterruptState state) {
  * @param state Callback state
  */
 void app_func_stim_biphasic_cb(PWM_InterruptState state) {
-	if (state == BEFORE_HIGH) {
+	if (state == TO_HIGH) {
 		/* Period overflow — start of new pulse cycle */
 		uint32_t arr = __HAL_TIM_GET_AUTORELOAD(&HANDLE_PULSE2_TIM) + 1;
 		uint32_t cnt = __HAL_TIM_GET_COUNTER(&HANDLE_PULSE2_TIM);
@@ -883,7 +911,7 @@ void app_func_stim_biphasic_cb(PWM_InterruptState state) {
 			}
 		}
 	}
-	else if (state == TO_HIGH) {
+	else if (state == BEFORE_HIGH) {
 		/* End of interphase gap — begin anodic phase */
 		if (biphasicWave.current_phase == BIPHASIC_PHASE_INTERPHASE_GAP) {
 			sel_ch_srcsnk_set(biphasicWave.sel_negative, biphasicWave.sel_enabled);
@@ -892,6 +920,11 @@ void app_func_stim_biphasic_cb(PWM_InterruptState state) {
 				imp_sel_set(biphasicWave.sel_negative, biphasicWave.sel_enabled);
 			}
 		}
+	}
+	else if (state == ANODIC_END) {
+		/* End of anodic phase — discharge until next pulse */
+		sel_ch_srcsnk_set(biphasicWave.sel_discharge, biphasicWave.sel_enabled);
+		biphasicWave.current_phase = BIPHASIC_PHASE_IDLE;
 	}
 }
 

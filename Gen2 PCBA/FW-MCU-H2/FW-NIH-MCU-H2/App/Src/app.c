@@ -236,4 +236,7 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim)
 			app_func_stim_stim2_cb(BEFORE_HIGH);
 		}
 	}
+	else if (htim == &HANDLE_PULSE2_TIM && htim->Channel == TIM_ACH_PULSE2_ANOD_END) {
+		app_func_stim_biphasic_cb(ANODIC_END);
+	}
 }

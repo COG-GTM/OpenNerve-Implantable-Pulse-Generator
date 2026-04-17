@@ -38,6 +38,7 @@ typedef enum
 	BEFORE_HIGH = 0U,
 	TO_HIGH,
 	TO_LOW,
+	ANODIC_END,
 } PWM_InterruptState;
 
 typedef enum
@@ -377,6 +378,15 @@ void app_func_stim_sine_cb(SINE_InterruptState state);
  * @param waveform The waveform settings
  */
 void app_func_stim_biphasic_para_set(BiphasicCustom_Waveform_t waveform);
+
+/**
+ * @brief Set the ramp settings for the biphasic custom waveform DAC
+ *
+ * @param ramp_up_duration_ms The duration of the ramp up, unit: ms
+ * @param ramp_down_duration_ms The duration of the ramp down, unit: ms
+ * @param voltage_mv The max voltage of VOUTA, unit: mV
+ */
+void app_func_stim_biphasic_ramp_set(uint32_t ramp_up_duration_ms, uint32_t ramp_down_duration_ms, uint16_t voltage_mv);
 
 /**
  * @brief Generate biphasic custom waveform based on waveform settings
