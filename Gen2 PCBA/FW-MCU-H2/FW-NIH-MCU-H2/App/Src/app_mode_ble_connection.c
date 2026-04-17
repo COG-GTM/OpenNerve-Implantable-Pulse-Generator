@@ -28,7 +28,7 @@ static uint8_t sensor_resp_payload[LEN_RESP_PAYLOAD_MAX];
 static Cmd_Resp_t sensor_resp;
 
 extern bool vnsb_en;
-extern bool biphasic_custom_en;
+extern volatile bool biphasic_custom_en;
 
 /**
  * @brief Parser for request commands in BLE connection mode, used to communicate with the remote end

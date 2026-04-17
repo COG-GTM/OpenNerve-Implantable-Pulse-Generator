@@ -9,7 +9,7 @@
 static bool therapy_session_status = false;
 
 bool vnsb_en = false;
-bool biphasic_custom_en = false;
+volatile bool biphasic_custom_en = false;
 
 /**
  * @brief Start therapy session and check for short circuit events

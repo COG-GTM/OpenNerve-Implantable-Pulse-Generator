@@ -6,7 +6,7 @@
 #include "app.h"
 #include "app_config.h"
 
-extern bool biphasic_custom_en;
+extern volatile bool biphasic_custom_en;
 
 /**
  * @brief Callback when magnet lost

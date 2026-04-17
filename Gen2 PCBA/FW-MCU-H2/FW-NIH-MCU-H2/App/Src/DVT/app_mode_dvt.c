@@ -13,17 +13,21 @@ static uint8_t hvSupplyTurnOn = 0;
 static bool shutdown = false;
 static bool sw_reset = false;
 
+extern volatile bool biphasic_custom_en;
+
 typedef struct {
 	bool src1;
 	bool src2;
 	bool vnsb_en;
 	bool imp_en;
+	bool biphasic_en;
 } Mocked_t;
 static Mocked_t mocked = {
 		.src1 = false,
 		.src2 = false,
 		.vnsb_en = false,
 		.imp_en = false,
+		.biphasic_en = false,
 };
 
 static TestInformation_t TestInformation = {
@@ -483,6 +487,7 @@ static Cmd_Resp_t app_mode_dvt_command_req_parser(Cmd_Req_t req) {
 						.trainOffDuration_ms 	= (uint32_t)train_off,
 				};
 				app_func_stim_biphasic_para_set(biphasic_para);
+				mocked.biphasic_en = true;
 		}
 	}
 		break;
@@ -612,18 +617,22 @@ static Cmd_Resp_t app_mode_dvt_command_req_parser(Cmd_Req_t req) {
 			resp.Status = STATUS_PAYLOAD_LEN_ERR;
 		}
 		else {
-			if (mocked.src1) {
-				app_func_stim_stim1_start(mocked.imp_en);
-			}
-			if (mocked.src2) {
-				if (mocked.vnsb_en) {
-					app_func_stim_sine_start();
+				if (mocked.src1) {
+					app_func_stim_stim1_start(mocked.imp_en);
 				}
-				else {
-					app_func_stim_stim2_start();
+				if (mocked.biphasic_en) {
+					biphasic_custom_en = true;
+					app_func_stim_biphasic_start(mocked.imp_en);
 				}
-			}
-			app_func_stim_sync();
+				else if (mocked.src2) {
+					if (mocked.vnsb_en) {
+						app_func_stim_sine_start();
+					}
+					else {
+						app_func_stim_stim2_start();
+					}
+				}
+				app_func_stim_sync();
 		}
 	}
 		break;
