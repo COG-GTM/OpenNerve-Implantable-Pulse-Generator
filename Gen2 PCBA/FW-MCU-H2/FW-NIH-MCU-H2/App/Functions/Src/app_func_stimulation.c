@@ -939,6 +939,10 @@ void app_func_stim_biphasic_start(bool imc_en) {
 		biphasicWave.train_period_us = biphasicWave.train_on_duration_us;
 	}
 
+	/* Set up initial cathodic phase MUX state before starting timer,
+	 * since PeriodElapsed won't fire until the first counter overflow */
+	sel_ch_srcsnk_set(biphasicWave.sel_negative, biphasicWave.sel_enabled);
+
 	__HAL_TIM_SET_AUTORELOAD(&HANDLE_PULSE1_TIM, biphasicWave.pulse_period_us - 1);
 	HAL_ERROR_CHECK(HAL_TIM_Base_Start_IT(&HANDLE_PULSE1_TIM));
 
