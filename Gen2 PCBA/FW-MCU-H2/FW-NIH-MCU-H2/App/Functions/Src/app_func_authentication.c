@@ -9,6 +9,7 @@
 FW_Image_Packet_t imagePacket = {0};
 FW_Image_Info_t image_info = {0};
 
+#ifdef STM32U585xx
 static PKA_ECDSAVerifInTypeDef verifIn = {
 		.coef 				= prime256v1_absA,
 		.modulus 			= prime256v1_Prime,
@@ -23,6 +24,7 @@ static const ECC_PublicKey_t PublicKey_Admin = {
 };
 
 static ECDSA_Data_t fw_image_ecdsa_data;
+#endif /* STM32U585xx */
 static uint8_t hash_verify_fail_num = 0;
 
 /**
@@ -33,6 +35,7 @@ static uint8_t hash_verify_fail_num = 0;
  * @return false Verification failed
  */
 bool app_func_auth_verify_sign_admin(ECDSA_Data_t ecdsa_data) {
+#ifdef STM32U585xx
 	bool result = false;
 	hash_verify_fail_num = 0;
 
@@ -58,6 +61,10 @@ bool app_func_auth_verify_sign_admin(ECDSA_Data_t ecdsa_data) {
 		result = false;
 	}
 	return result;
+#else
+	(void)ecdsa_data;
+	return false; /* Hardware crypto not available on this MCU variant */
+#endif /* STM32U585xx */
 }
 
 /**
@@ -67,6 +74,7 @@ bool app_func_auth_verify_sign_admin(ECDSA_Data_t ecdsa_data) {
  * @return uint8_t* Pointer of the number of failed verifications, 0 means verification passed. It is reset when verifying the ECDSA signature.
  */
 uint8_t* app_func_auth_compare_fram_hash(uint32_t img_size) {
+#ifdef STM32U585xx
 	if (img_size > 0U) {
 		imagePacket.ImageDataOffset = 0;
 		image_info.ImageSize = img_size;
@@ -98,6 +106,10 @@ uint8_t* app_func_auth_compare_fram_hash(uint32_t img_size) {
 	else {
 		hash_verify_fail_num++;
 	}
+#else
+	(void)img_size;
+	hash_verify_fail_num++; /* Hardware HASH not available on this MCU variant */
+#endif /* STM32U585xx */
 	return &hash_verify_fail_num;
 }
 
@@ -110,6 +122,7 @@ uint8_t* app_func_auth_compare_fram_hash(uint32_t img_size) {
  * @return false Verification failed
  */
 bool app_func_auth_compare_flash_hash(uint32_t img_size, uint8_t* img_hash) {
+#ifdef STM32U585xx
 	uint8_t 	ImageHash[32] = {0};
 
 	HAL_ERROR_CHECK(HAL_HASHEx_SHA256_Start(&hhash, (uint8_t*)BANK2_ADDR, img_size, ImageHash, 10));
@@ -119,6 +132,11 @@ bool app_func_auth_compare_flash_hash(uint32_t img_size, uint8_t* img_hash) {
 	else {
 		return false;
 	}
+#else
+	(void)img_size;
+	(void)img_hash;
+	return false; /* Hardware HASH not available on this MCU variant */
+#endif /* STM32U585xx */
 }
 
 /**
@@ -128,6 +146,7 @@ bool app_func_auth_compare_flash_hash(uint32_t img_size, uint8_t* img_hash) {
  * @return uint8_t User class
  */
 uint8_t app_func_auth_user_class_get(ECDSA_Data_t ecdsa_data) {
+#ifdef STM32U585xx
 	ECC_PublicKey_t publickey;
 
 	verifIn.primeOrderSize 	= prime256v1_Order_len;
@@ -181,4 +200,8 @@ uint8_t app_func_auth_user_class_get(ECDSA_Data_t ecdsa_data) {
 	}
 
 	return USER_CLASS_INVALID;
+#else
+	(void)ecdsa_data;
+	return USER_CLASS_INVALID; /* Hardware crypto not available on this MCU variant */
+#endif /* STM32U585xx */
 }

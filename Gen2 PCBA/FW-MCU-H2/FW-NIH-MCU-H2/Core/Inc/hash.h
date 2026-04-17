@@ -32,13 +32,16 @@ extern "C" {
 
 /* USER CODE END Includes */
 
+#ifdef HAL_HASH_MODULE_ENABLED
 extern HASH_HandleTypeDef hhash;
+#endif
 
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
 
 void MX_HASH_Init(void);
+/* Note: On STM32U575xx (no hardware HASH), MX_HASH_Init is a no-op */
 
 /* USER CODE BEGIN Prototypes */
 

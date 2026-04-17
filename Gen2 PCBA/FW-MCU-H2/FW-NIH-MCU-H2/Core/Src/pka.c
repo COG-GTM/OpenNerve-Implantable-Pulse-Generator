@@ -24,7 +24,9 @@
 
 /* USER CODE END 0 */
 
+#ifdef HAL_PKA_MODULE_ENABLED
 PKA_HandleTypeDef hpka;
+#endif
 
 /* PKA init function */
 void MX_PKA_Init(void)
@@ -48,6 +50,7 @@ void MX_PKA_Init(void)
 
 }
 
+#ifdef HAL_PKA_MODULE_ENABLED
 void HAL_PKA_MspInit(PKA_HandleTypeDef* pkaHandle)
 {
 
@@ -86,6 +89,7 @@ void HAL_PKA_MspDeInit(PKA_HandleTypeDef* pkaHandle)
   /* USER CODE END PKA_MspDeInit 1 */
   }
 }
+#endif /* HAL_PKA_MODULE_ENABLED */
 
 /* USER CODE BEGIN 1 */
 

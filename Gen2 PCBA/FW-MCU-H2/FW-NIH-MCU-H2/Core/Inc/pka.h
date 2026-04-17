@@ -32,13 +32,16 @@ extern "C" {
 
 /* USER CODE END Includes */
 
+#ifdef HAL_PKA_MODULE_ENABLED
 extern PKA_HandleTypeDef hpka;
+#endif
 
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
 
 void MX_PKA_Init(void);
+/* Note: On STM32U575xx (no hardware PKA), MX_PKA_Init is a no-op */
 
 /* USER CODE BEGIN Prototypes */
 
