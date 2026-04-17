@@ -9,7 +9,17 @@
 #include <math.h>
 #include <stdlib.h>
 
+#define MICRO_TO_SECONDS              1e-6
+#define ROUNDING_OFFSET               0.5
+#define MV_TO_V_FACTOR                1000.0F
+#define NEWTON_MAX_ITERATIONS         20U
+#define NEWTON_CONVERGENCE_THRESHOLD  1e-12F
+#define NEWTON_MIN_CURRENT            1e-12F
+#define SENSOR_SAMPLING_MULTIPLIER    10.0
+
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 uint16_t battA[100];
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 uint16_t battB[100];
 
 /**
@@ -27,6 +37,7 @@ void app_func_meas_batt_mon_enable(bool enable) {
  * @param p_vbatA The battery voltage of battery 1, unit: mV
  * @param p_vbatB The battery voltage of battery 2, unit: mV
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 void app_func_meas_batt_mon_meas(uint16_t* p_vbatA, uint16_t* p_vbatB) {
 	bsp_adc_single_sampling(HANDLE_ID_ADC1, ADC1_CHANNEL_BATT_MON1, battA, 100, 100);
 	bsp_adc_single_sampling(HANDLE_ID_ADC1, ADC1_CHANNEL_BATT_MON2, battB, 100, 100);
@@ -59,6 +70,7 @@ void app_func_meas_imp_enable(bool enable) {
  * @param impin_n_sel2 Select multiplexer U901 input X(IMP_SINK(L)/SINK_ENCL(H)) to VIMC_IN-
  * @param impin_p_sel Select multiplexer U901 input Y(STIMA(L)/STIMB(H)) to VIMC_IN+
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 void app_func_meas_imp_sel_set(bool impin_n_sel0, bool impin_n_sel1, bool impin_n_sel2, bool impin_p_sel) {
 	HAL_GPIO_WritePin(IMP_IN_N_SEL0_GPIO_Port, IMP_IN_N_SEL0_Pin, (impin_n_sel0)?GPIO_PIN_SET:GPIO_PIN_RESET); /* parasoft-suppress MISRAC2012-RULE_11_4-a "This definition comes from HAL." */
 	HAL_GPIO_WritePin(IMP_IN_N_SEL1_GPIO_Port, IMP_IN_N_SEL1_Pin, (impin_n_sel1)?GPIO_PIN_SET:GPIO_PIN_RESET); /* parasoft-suppress MISRAC2012-RULE_11_4-a "This definition comes from HAL." */
@@ -74,15 +86,17 @@ void app_func_meas_imp_sel_set(bool impin_n_sel0, bool impin_n_sel1, bool impin_
  *
  * @return uint16_t Number of sampling points (in samples) required to cover the given sampling time
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 uint16_t app_func_meas_imp_sampPoints_get(uint32_t samplingFrequency_hz, uint32_t samplingTime_us) {
-	_Float64 samplingTime_s = samplingTime_us * 1e-6;
+	_Float64 samplingTime_s = samplingTime_us * MICRO_TO_SECONDS;
 
-    uint32_t samplingPoints = (uint32_t)(samplingFrequency_hz * samplingTime_s + 0.5);
+    uint32_t samplingPoints = (uint32_t)(samplingFrequency_hz * samplingTime_s + ROUNDING_OFFSET);
 
-    if (samplingPoints == 0)
+    if (samplingPoints == 0) {
     	samplingPoints = 1;
-    else if (samplingPoints > ADC_MAX_SAMPLE_POINTS)
+    } else if (samplingPoints > ADC_MAX_SAMPLE_POINTS) {
     	samplingPoints = ADC_MAX_SAMPLE_POINTS;
+    }
 
     return samplingPoints;
 }
@@ -95,6 +109,7 @@ uint16_t app_func_meas_imp_sampPoints_get(uint32_t samplingFrequency_hz, uint32_
  * @param samplingPoints Number of the sampling points
  * @param samplingFrequency_hz 	Sampling frequency of the Measurement
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 void app_func_meas_imp_volt_meas(uint32_t channel, uint16_t voltageBuffer[], uint16_t samplingPoints, uint16_t samplingFrequency_hz) {
 	bsp_adc_single_sampling(HANDLE_ID_ADC4, channel, voltageBuffer, samplingPoints, samplingFrequency_hz);
 }
@@ -110,6 +125,7 @@ void app_func_meas_imp_volt_meas(uint32_t channel, uint16_t voltageBuffer[], uin
  *
  * @return _Float64 Differential load voltage in mV
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 _Float64 app_func_meas_imp_volt_calc(uint16_t voltageBuffer[], uint16_t periodPoints, uint16_t widthPoints) {
 	uint16_t* p_buff = (uint16_t*)voltageBuffer;
 	_Float64 impVolt = 0;
@@ -117,8 +133,10 @@ _Float64 app_func_meas_imp_volt_calc(uint16_t voltageBuffer[], uint16_t periodPo
 	uint8_t periodPulses = 2;
 	uint16_t halfPeriodPoints = periodPoints / 2;
 	uint16_t halfWidthPoints = widthPoints / 2;
-	uint16_t startPoint, stopPoint;
-	uint16_t maxV, minV;
+	uint16_t startPoint = 0U;
+	uint16_t stopPoint = 0U;
+	uint16_t maxV = 0U;
+	uint16_t minV = 0xFFFFU;
 
 	for (uint8_t pulse = 0;pulse < periodPulses;pulse++) {
 		maxV = 0;
@@ -144,29 +162,32 @@ _Float64 app_func_meas_imp_volt_calc(uint16_t voltageBuffer[], uint16_t periodPo
  * @param vload_mV The voltage difference across the load
  * @return _Float64 The resistance of the load
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 _Float64 app_func_meas_imp_calc(_Float64 vdac_mV, _Float64 vload_mV) {
-	_Float64 iref = vdac_mV / 1000.0f / BSP_STIM_RREF;
-    if (iref <= 0.0f)
-    	return 0.0f;
+	_Float64 iref = vdac_mV / MV_TO_V_FACTOR / BSP_STIM_RREF;
+    if (iref <= 0.0F) {
+    	return 0.0F;
+    }
 
     _Float64 iout = iref * (BSP_MIRROR_RREF / BSP_MIRROR_ROUT);
 
-    for (uint8_t iter = 0; iter < 20; iter++) {
+    for (uint8_t iter = 0; iter < NEWTON_MAX_ITERATIONS; iter++) {
     	_Float64 f  = BSP_VT * logf(iref / iout) - (iout * BSP_MIRROR_ROUT - iref * BSP_MIRROR_RREF);
     	_Float64 df = -(BSP_VT / iout) - BSP_MIRROR_ROUT;
     	_Float64 delta = f / df;
         iout -= delta;
 
-        if (fabsf(delta) < 1e-12f)
+        if (fabsf(delta) < NEWTON_CONVERGENCE_THRESHOLD) {
         	break;
+        }
 
-        if (iout <= 0.0f) {
-            iout = 1e-12f;
+        if (iout <= 0.0F) {
+            iout = NEWTON_MIN_CURRENT;
             break;
         }
     }
 
-    return (vload_mV / (iout * 1000.0f));
+    return (vload_mV / (iout * MV_TO_V_FACTOR));
 }
 
 /**
@@ -222,6 +243,7 @@ void app_func_meas_sensor_enable(uint8_t sensorID, bool enable) {
  * @param bufferSize 	Data buffer size
  * @param samplingFrequency_hz 	Sampling frequency of the sensor. The minimum unit is 1Hz, and the range is 15 ~ 65535Hz
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 void app_func_meas_sensor_meas(uint8_t sensorID, uint8_t* buff, uint8_t bufferSize, uint16_t samplingFrequency_hz) {
 	uint16_t samplingPoints = bufferSize / sizeof(uint16_t);
 	switch(sensorID)
@@ -255,8 +277,9 @@ void app_func_meas_sensor_meas(uint8_t sensorID, uint8_t* buff, uint8_t bufferSi
  * @param bufferSize 	Data buffer size
  * @param samplingFrequency_hz 	Sampling frequency of the sensor. The minimum unit is 0.1Hz, and the range is 1.5 ~ 6553.5Hz
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 void app_func_meas_sensor_sampling(uint8_t sensorID, uint8_t* buff, uint8_t bufferSize, float samplingFrequency_hz) {
-	app_func_meas_sensor_meas(sensorID, buff, bufferSize, samplingFrequency_hz * 10.0);
+	app_func_meas_sensor_meas(sensorID, buff, bufferSize, samplingFrequency_hz * SENSOR_SAMPLING_MULTIPLIER);
 	bsp_adc_sampling_continue_IT(10U);
 }
 
@@ -285,6 +308,7 @@ void app_func_meas_vrect_enable(bool enable) {
  * @param bufferSize 	Data buffer size
  * @param samplingFrequency_hz 	Sampling frequency of the vrect monitor
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 void app_func_meas_vrect_mon_meas(uint8_t* buff, uint8_t bufferSize, uint16_t samplingFrequency_hz) {
 	uint16_t samplingPoints = bufferSize / sizeof(uint16_t);
 	bsp_adc_single_sampling(HANDLE_ID_ADC4, ADC4_CHANNEL_VRECT_MON, (uint16_t*)buff, samplingPoints, samplingFrequency_hz);
@@ -307,6 +331,7 @@ void app_func_meas_therm_enable(bool enable) {
  * @param bufferSize 	Data buffer size
  * @param samplingFrequency_hz 	Sampling frequency of the thermistor
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 void app_func_meas_therm_meas(uint8_t thermID, uint8_t* buff, uint8_t bufferSize, uint16_t samplingFrequency_hz) {
 	uint16_t samplingPoints = bufferSize / sizeof(uint16_t);
 	switch(thermID)

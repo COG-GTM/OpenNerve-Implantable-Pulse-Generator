@@ -24,9 +24,13 @@
 
 /* USER CODE END 0 */
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 ADC_HandleTypeDef hadc1;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 ADC_HandleTypeDef hadc4;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 DMA_HandleTypeDef handle_GPDMA1_Channel0;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 DMA_HandleTypeDef handle_GPDMA1_Channel1;
 
 /* ADC1 init function */
