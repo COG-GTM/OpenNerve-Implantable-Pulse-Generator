@@ -6,6 +6,10 @@
 #include "bsp_adc.h"
 #include "bsp_config.h"
 
+#define BSP_ADC_INIT_SAMPLE_POINTS   100U
+#define BSP_ADC_INIT_SAMPLE_FREQ_HZ  10000U
+
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint32_t RankADC1[] = {
 		ADC_REGULAR_RANK_1,
 		ADC_REGULAR_RANK_2,
@@ -25,13 +29,16 @@ static uint32_t RankADC1[] = {
 		ADC_REGULAR_RANK_16,
 };
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint32_t samplingBuffer[ADC_MAX_SAMPLE_POINTS];
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static ADC_HandleTypeDef* p_hadc[] = {
 		&hadc1,
 		&hadc4,
 };
 
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 static uint32_t vrefanalog_mv[2] = {0};
 
 typedef struct
@@ -46,6 +53,7 @@ typedef struct
 	uint16_t* 				voltageBuffer;
 	uint32_t				vrefanalog_mv;
 } ADC_Sampling_t;
+/* NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) */
 ADC_Sampling_t	sampling;
 
 /**
@@ -125,6 +133,7 @@ static void bsp_adc_reinit(ADC_HandleTypeDef *hadc, ADC_ChannelConfTypeDef confi
  * @param samplingPoints Number of the sampling points
  * @param samplingFrequency_hz Sampling frequency of the ADC
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 static void bsp_adc_sampling(ADC_HandleTypeDef *hadc, uint32_t samplingBuffer[], uint16_t samplingPoints, uint16_t samplingFrequency_hz)
 {
 	sampling.hadc = hadc;
@@ -170,8 +179,8 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
  */
 void bsp_adc_init(void)
 {
-	uint16_t samplingPoints = 100;
-	uint16_t samplingFrequency_hz = 10000;
+	uint16_t samplingPoints = BSP_ADC_INIT_SAMPLE_POINTS;
+	uint16_t samplingFrequency_hz = BSP_ADC_INIT_SAMPLE_FREQ_HZ;
 	for (uint8_t i = 0;i < 2; i++) {
 		ADC_HandleTypeDef* hadc = p_hadc[i];
 		bsp_adc_deinit(hadc);
@@ -197,6 +206,7 @@ void bsp_adc_init(void)
  * @param samplingPoints Number of the sampling points
  * @param samplingFrequency_hz Sampling frequency of the ADC
  */
+/* NOLINTNEXTLINE(bugprone-easily-swappable-parameters) */
 __weak void bsp_adc_single_sampling(uint8_t hadcID, uint32_t channel, uint16_t voltageBuffer[], uint16_t samplingPoints, uint16_t samplingFrequency_hz)
 {
 	ADC_HandleTypeDef* hadc = p_hadc[hadcID];
