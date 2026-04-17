@@ -42,6 +42,14 @@ Parameter explanation (sine wave):
 <img width="369" height="318" alt="image" src="https://github.com/user-attachments/assets/d07d34a2-3391-41c1-802e-f2275c0f76ab" />
 
 
+## Biphasic Stimulation
+
+OpenNerve Gen2 supports **biphasic stimulation**, a charge-balanced waveform consisting of a cathodic (stimulating) phase followed by an anodic (charge-recovery) phase. Biphasic stimulation is the preferred mode for chronic neuromodulation applications such as vagus nerve stimulation (VNS), spinal cord stimulation (SCS), and deep brain stimulation (DBS) because it minimizes tissue damage and electrode degradation.
+
+Configurable parameters include cathodic width, anodic width, interphase gap, pulse frequency, amplitude, and train on/off timing. Biphasic stimulation is controlled via dedicated BLE opcodes (`0x4C`-`0x4F`).
+
+For full details on waveform parameters, BLE commands, usage examples, safety considerations, and firmware architecture, see the [Biphasic Stimulation Guide](Biphasic-Stimulation-Guide.md).
+
 ## Impedance
 The “get impedance” button will return the impedance magnitude between channels 1 and 2 using a 100us pulse width test stimulation. The approximate impedance range that can be measured is 100 Ohms to 5kOhms. See the “Impedance Measurement Strategy” on GitHub for details of how impedance measurement works.
 
