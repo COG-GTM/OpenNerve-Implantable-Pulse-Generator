@@ -9,6 +9,7 @@
 static bool therapy_session_status = false;
 
 bool vnsb_en = false;
+bool biphasic_custom_en = false;
 
 /**
  * @brief Start therapy session and check for short circuit events
@@ -122,7 +123,28 @@ bool app_mode_therapy_start(void) {
 			sel.sel_ch.ch1 = STIM_SEL_CH1_STIMA;
 			sel.sel_ch.ch3 = STIM_SEL_CH3_STIMB;
 		}
-		else {
+
+		if (biphasic_custom_en) {
+			_Float64 cathodic_w, anodic_w, interphase_g, freq, train_on, train_off;
+			app_func_para_data_get((const uint8_t*)SPID_BIPHASIC_CATHODIC_WIDTH, (uint8_t*)&cathodic_w, sizeof(cathodic_w));
+			app_func_para_data_get((const uint8_t*)SPID_BIPHASIC_ANODIC_WIDTH, (uint8_t*)&anodic_w, sizeof(anodic_w));
+			app_func_para_data_get((const uint8_t*)SPID_BIPHASIC_INTERPHASE_GAP, (uint8_t*)&interphase_g, sizeof(interphase_g));
+			app_func_para_data_get((const uint8_t*)SPID_BIPHASIC_PULSE_FREQUENCY, (uint8_t*)&freq, sizeof(freq));
+			app_func_para_data_get((const uint8_t*)SPID_BIPHASIC_TRAIN_ON_DURATION, (uint8_t*)&train_on, sizeof(train_on));
+			app_func_para_data_get((const uint8_t*)SPID_BIPHASIC_TRAIN_OFF_DURATION, (uint8_t*)&train_off, sizeof(train_off));
+
+			BiphasicCustom_Waveform_t biphasic_para = {
+				.cathodicWidth_us 		= (uint32_t)cathodic_w,
+				.anodicWidth_us 		= (uint32_t)anodic_w,
+				.interphaseGap_us 		= (uint32_t)interphase_g,
+				.pulsePeriod_us 		= (uint32_t)(1000000.0 / freq),
+				.trainOnDuration_ms 	= (uint32_t)(train_on * 1000.0),
+				.trainOffDuration_ms 	= (uint32_t)(train_off * 1000.0),
+			};
+			app_func_stim_biphasic_para_set(biphasic_para);
+		}
+
+		if (!vnsb_en && !biphasic_custom_en) {
 			uint8_t sns_snkP_select = (uint8_t)sns_anode_electrode_number;
 			uint8_t sns_snkN_select = (uint8_t)sns_cathode_electrode_number;
 
@@ -202,10 +224,14 @@ bool app_mode_therapy_start(void) {
 		bsp_wdg_refresh();
 
 		app_func_stim_mux_enable(true);
-		app_func_stim_stim1_start(false);
-		if (vnsb_en) {
-			app_func_stim_sine_start();
-			app_func_stim_sync();
+		if (biphasic_custom_en) {
+			app_func_stim_biphasic_start(false);
+		} else {
+			app_func_stim_stim1_start(false);
+			if (vnsb_en) {
+				app_func_stim_sine_start();
+				app_func_stim_sync();
+			}
 		}
 		therapy_session_status = true;
 		app_func_logs_event_write(EVENT_STIM_START, NULL);

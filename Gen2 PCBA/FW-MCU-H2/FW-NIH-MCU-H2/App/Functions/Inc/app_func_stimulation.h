@@ -55,6 +55,15 @@ typedef struct {
 } Stimulus_Waveform_t;
 
 typedef struct {
+	uint32_t 	cathodicWidth_us;
+	uint32_t 	anodicWidth_us;
+	uint32_t 	interphaseGap_us;
+	uint32_t 	pulsePeriod_us;
+	uint32_t 	trainOnDuration_ms;
+	uint32_t 	trainOffDuration_ms;
+} BiphasicCustom_Waveform_t;
+
+typedef struct {
 	uint32_t	sinePeriod_us;				/*!< The period of the sine waveform, unit: us */
 	uint32_t	sinePhaseShift_us;			/*!< The phase shift of the sine waveform, unit: us */
 	uint16_t	amplitude_mV;				/*!< The amplitude of the sine wave, unit: mV */
@@ -331,6 +340,11 @@ void app_func_stim_sine_stop(void);
  * @param state Callback state
  */
 void app_func_stim_sine_cb(SINE_InterruptState state);
+
+void app_func_stim_biphasic_para_set(BiphasicCustom_Waveform_t waveform);
+void app_func_stim_biphasic_start(bool imc_en);
+void app_func_stim_biphasic_stop(void);
+void app_func_stim_biphasic_cb(PWM_InterruptState state);
 
 /**
  * @brief Synchronizes the timers of all waveforms.

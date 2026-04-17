@@ -6,6 +6,8 @@
 #include "app.h"
 #include "app_config.h"
 
+extern bool biphasic_custom_en;
+
 /**
  * @brief Callback when magnet lost
  *
@@ -178,7 +180,11 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim) /* parasoft-supp
 		app_func_stim_stim1_cb(TO_LOW);
 	}
 	else if (htim == &HANDLE_PULSE2_TIM && htim->Channel == TIM_ACH_PULSE2_TO_LOW) {
-		app_func_stim_stim2_cb(TO_LOW);
+		if (biphasic_custom_en) {
+			app_func_stim_biphasic_cb(TO_LOW);
+		} else {
+			app_func_stim_stim2_cb(TO_LOW);
+		}
 	}
 	else if (htim == &HANDLE_SINE_TIM && htim->Channel == TIM_ACH_SINE_POLR) {
 		app_func_stim_sine_cb(POLR_NEG);
@@ -196,7 +202,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) /* parasoft-suppress
 		app_func_stim_stim1_cb(TO_HIGH);
 	}
 	else if (htim == &HANDLE_PULSE2_TIM) {
-		app_func_stim_stim2_cb(TO_HIGH);
+		if (biphasic_custom_en) {
+			app_func_stim_biphasic_cb(TO_HIGH);
+		} else {
+			app_func_stim_stim2_cb(TO_HIGH);
+		}
 	}
 	else if (htim == &HANDLE_SINE_TIM) {
 		app_func_stim_sine_cb(POLR_POS);
@@ -220,6 +230,10 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim)
 		app_func_stim_stim1_cb(BEFORE_HIGH);
 	}
 	else if (htim == &HANDLE_PULSE2_TIM && htim->Channel == TIM_ACH_PULSE2_BEF_HI) {
-		app_func_stim_stim2_cb(BEFORE_HIGH);
+		if (biphasic_custom_en) {
+			app_func_stim_biphasic_cb(BEFORE_HIGH);
+		} else {
+			app_func_stim_stim2_cb(BEFORE_HIGH);
+		}
 	}
 }
