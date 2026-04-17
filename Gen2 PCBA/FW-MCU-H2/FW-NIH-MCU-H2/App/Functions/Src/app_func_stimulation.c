@@ -890,7 +890,9 @@ void app_func_stim_biphasic_cb(PWM_InterruptState state) {
 	else if (state == TO_LOW) {
 		/* End of cathodic phase — enter interphase gap (discharge) */
 		sel_ch_srcsnk_set(biphasicWave.sel_discharge, biphasicWave.sel_enabled);
-		biphasicWave.current_phase = BIPHASIC_PHASE_INTERPHASE_GAP;
+		if (biphasicWave.current_phase == BIPHASIC_PHASE_CATHODIC) {
+			biphasicWave.current_phase = BIPHASIC_PHASE_INTERPHASE_GAP;
+		}
 
 		/* Apply ramp modulation at phase transitions */
 		if (memcmp(&biphasicWave.ramp, &(Ramp_t){0}, sizeof(Ramp_t)) != 0) {
