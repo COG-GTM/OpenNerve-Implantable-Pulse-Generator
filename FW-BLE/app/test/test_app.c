@@ -13,6 +13,7 @@
 #include "test_app_ble.h"
 #include "test_app_sp.h"
 #include "test_app_cmd.h"
+#include "test_app_biphasic.h"
 
 #include "nrf_delay.h"
 
@@ -47,6 +48,7 @@ void test_app(void)
     test_run_app_ble_on_idle();
     test_run_app_ble_on_connected();
     test_run_app_ble_on_disconnected();
+    test_run_app_biphasic();
 
     UnityPrint("...Unity Test Finish");
     UnityPrint("Unity Test Finish...");
