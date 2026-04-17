@@ -124,8 +124,7 @@ bool app_mode_therapy_start(void) {
 			sel.sel_ch.ch1 = STIM_SEL_CH1_STIMA;
 			sel.sel_ch.ch3 = STIM_SEL_CH3_STIMB;
 		}
-
-			if (biphasic_mode_en) {
+		else if (biphasic_mode_en) {
 				_Float64 cathodic_w, anodic_w, interphase_g, freq, train_on, train_off;
 			app_func_para_data_get((const uint8_t*)SPID_BIPHASIC_CATHODIC_WIDTH, (uint8_t*)&cathodic_w, sizeof(cathodic_w));
 			app_func_para_data_get((const uint8_t*)SPID_BIPHASIC_ANODIC_WIDTH, (uint8_t*)&anodic_w, sizeof(anodic_w));
