@@ -55,6 +55,15 @@ typedef struct {
 } Stimulus_Waveform_t;
 
 typedef struct {
+	uint32_t 	cathodicWidth_us;
+	uint32_t 	anodicWidth_us;
+	uint32_t 	interphaseGap_us;
+	uint32_t 	pulsePeriod_us;
+	uint32_t 	trainOnDuration_ms;
+	uint32_t 	trainOffDuration_ms;
+} BiphasicCustom_Waveform_t;
+
+typedef struct {
 	uint32_t	sinePeriod_us;				/*!< The period of the sine waveform, unit: us */
 	uint32_t	sinePhaseShift_us;			/*!< The phase shift of the sine waveform, unit: us */
 	uint16_t	amplitude_mV;				/*!< The amplitude of the sine wave, unit: mV */
@@ -132,6 +141,32 @@ typedef struct {
 
 	Ramp_t 		ramp;							/*!< Ramp up and down settings. */
 } PulseWave_t;
+
+typedef enum {
+	BIPHASIC_PHASE_CATHODIC,
+	BIPHASIC_PHASE_INTERPHASE_GAP,
+	BIPHASIC_PHASE_ANODIC,
+	BIPHASIC_PHASE_IDLE
+} BiphasicPhase_t;
+
+typedef struct {
+	uint32_t 	cathodic_width_us;
+	uint32_t 	anodic_width_us;
+	uint32_t 	interphase_gap_us;
+	uint32_t 	pulse_period_us;
+	uint32_t 	train_period_us;
+	uint32_t 	train_on_duration_us;
+	uint32_t 	train_timer_us;
+	BiphasicPhase_t current_phase;
+	bool		is_running;
+	Stim_Sel_Ch_t sel_positive;
+	Stim_Sel_Ch_t sel_negative;
+	Stim_Sel_Ch_t sel_discharge;
+	Stim_Sel_Ch_t sel_enabled;
+	bool		pause_output;
+	bool		imc_is_enabled;
+	Ramp_t 		ramp;
+} BiphasicWave_t;
 
 typedef struct {
 	uint32_t tim_cnt;							/*!< The timer counts of the point on the sine period */
@@ -331,6 +366,11 @@ void app_func_stim_sine_stop(void);
  * @param state Callback state
  */
 void app_func_stim_sine_cb(SINE_InterruptState state);
+
+void app_func_stim_biphasic_para_set(BiphasicCustom_Waveform_t waveform);
+void app_func_stim_biphasic_start(bool imc_en);
+void app_func_stim_biphasic_stop(void);
+void app_func_stim_biphasic_cb(PWM_InterruptState state);
 
 /**
  * @brief Synchronizes the timers of all waveforms.
