@@ -392,6 +392,13 @@ void app_func_stim_biphasic_start(bool imc_en);
 void app_func_stim_biphasic_stop(void);
 
 /**
+ * @brief Check if biphasic waveform is currently running
+ *
+ * @return bool true if running, false otherwise
+ */
+bool app_func_stim_biphasic_is_running(void);
+
+/**
  * @brief Timer callback of the biphasic waveform
  *
  * @param state Callback state

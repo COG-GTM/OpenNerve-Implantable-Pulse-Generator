@@ -900,7 +900,7 @@ void app_func_stim_biphasic_para_set(Biphasic_Waveform_t biphasic_waveform) {
  * @param imc_en The enabled status of IMC
  */
 void app_func_stim_biphasic_start(bool imc_en) {
-	if (biphasicWave.is_running) {
+	if (biphasicWave.is_running || pulseWave1.is_running) {
 		return;
 	}
 
@@ -970,6 +970,15 @@ void app_func_stim_biphasic_stop(void) {
 		HAL_ERROR_CHECK(HAL_TIM_OC_Stop_IT(&HANDLE_PULSE1_TIM, TIM_CHANNEL_3));
 		(void)memset(&biphasicWave, 0, sizeof(biphasicWave));
 	}
+}
+
+/**
+ * @brief Check if biphasic waveform is currently running
+ *
+ * @return bool true if running, false otherwise
+ */
+bool app_func_stim_biphasic_is_running(void) {
+	return biphasicWave.is_running;
 }
 
 /**
