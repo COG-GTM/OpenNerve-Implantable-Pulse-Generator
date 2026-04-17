@@ -225,15 +225,19 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim)
 		if (biphasicWave.is_running) {
 			app_func_stim_biphasic_cb(BIPHASIC_INTERPHASE);
 		}
+	}
+	else if (htim == &HANDLE_PULSE1_TIM && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
+		if (biphasicWave.is_running) {
+			app_func_stim_biphasic_cb(BIPHASIC_ANODIC);
+		}
 		else {
 			app_func_stim_stim1_cb(BEFORE_HIGH);
 		}
 	}
-	else if (htim == &HANDLE_PULSE1_TIM && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
-		app_func_stim_biphasic_cb(BIPHASIC_ANODIC);
-	}
 	else if (htim == &HANDLE_PULSE1_TIM && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
-		app_func_stim_biphasic_cb(BIPHASIC_IDLE);
+		if (biphasicWave.is_running) {
+			app_func_stim_biphasic_cb(BIPHASIC_IDLE);
+		}
 	}
 	else if (htim == &HANDLE_PULSE2_TIM && htim->Channel == TIM_ACH_PULSE2_BEF_HI) {
 		app_func_stim_stim2_cb(BEFORE_HIGH);
