@@ -417,7 +417,7 @@ void app_func_stim_sel_set(Stim_Sel_t sel) {
  */
 void app_func_stim_curr_src_set(Current_Sources_t current_sources) {
 	srcSnk = current_sources;
-	if (!pulseWave1.is_running && !pulseWave2.is_running && !sineWave.is_running) {
+	if (!pulseWave1.is_running && !pulseWave2.is_running && !sineWave.is_running && !biphasicWave.is_running) {
 		HAL_GPIO_WritePin(SRC1_GPIO_Port, 	SRC1_Pin, 	(current_sources.src1)?GPIO_PIN_SET:GPIO_PIN_RESET); /* parasoft-suppress MISRAC2012-RULE_11_4-a "This definition comes from HAL." */
 		HAL_GPIO_WritePin(SRC2_GPIO_Port, 	SRC2_Pin, 	(current_sources.src2)?GPIO_PIN_SET:GPIO_PIN_RESET); /* parasoft-suppress MISRAC2012-RULE_11_4-a "This definition comes from HAL." */
 		HAL_GPIO_WritePin(SNK1_GPIO_Port, 	SNK1_Pin, 	(current_sources.snk1)?GPIO_PIN_SET:GPIO_PIN_RESET); /* parasoft-suppress MISRAC2012-RULE_11_4-a "This definition comes from HAL." */
@@ -990,7 +990,7 @@ void app_func_stim_biphasic_cb(BIPHASIC_InterruptState state) {
 		biphasicWave.train_timer_us = (biphasicWave.train_timer_us + arr) % biphasicWave.train_period_us;
 
 		if (curr_timer < biphasicWave.train_on_duration_us && !biphasicWave.pause_output) {
-			sel_ch_srcsnk_set(biphasicWave.sel_negative, biphasicWave.sel_enabled);
+			sel_ch_srcsnk_set(biphasicWave.sel_positive, biphasicWave.sel_enabled);
 		}
 		else {
 			sel_ch_srcsnk_set(biphasicWave.sel_discharge, biphasicWave.sel_enabled);
@@ -1004,7 +1004,7 @@ void app_func_stim_biphasic_cb(BIPHASIC_InterruptState state) {
 		uint32_t curr_timer = (biphasicWave.train_timer_us + cnt) % biphasicWave.train_period_us;
 
 		if (curr_timer < biphasicWave.train_on_duration_us && !biphasicWave.pause_output) {
-			sel_ch_srcsnk_set(biphasicWave.sel_positive, biphasicWave.sel_enabled);
+			sel_ch_srcsnk_set(biphasicWave.sel_negative, biphasicWave.sel_enabled);
 		}
 		else {
 			sel_ch_srcsnk_set(biphasicWave.sel_discharge, biphasicWave.sel_enabled);
