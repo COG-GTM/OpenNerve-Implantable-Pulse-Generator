@@ -583,8 +583,20 @@ void app_func_stim_biphasic_start(bool imc_en) {
 		}
 	}
 
+	/* Set flags before starting timer to prevent ISR dispatch race.
+	 * A pending UIF from a previous run can fire immediately on
+	 * HAL_TIM_Base_Start_IT; without the flag set first, the ISR
+	 * routes to stim2_cb with zeroed pulseWave2 → div-by-zero. */
+	biphasicWave.is_running = true;
+	biphasic_custom_en = true;
+
 	/* Timer auto-reload = full pulse period */
 	__HAL_TIM_SET_AUTORELOAD(&HANDLE_PULSE2_TIM, biphasicWave.pulse_period_us - 1);
+	__HAL_TIM_SET_COUNTER(&HANDLE_PULSE2_TIM, 0);
+
+	/* Clear any pending interrupt flags from previous timer use */
+	__HAL_TIM_CLEAR_FLAG(&HANDLE_PULSE2_TIM, TIM_FLAG_UPDATE | TIM_FLAG_CC1 | TIM_FLAG_CC2 | TIM_FLAG_CC3);
+
 	HAL_ERROR_CHECK(HAL_TIM_Base_Start_IT(&HANDLE_PULSE2_TIM));
 
 	/* Channel 1: end of cathodic phase */
@@ -600,10 +612,6 @@ void app_func_stim_biphasic_start(bool imc_en) {
 	__HAL_TIM_SET_COMPARE(&HANDLE_PULSE2_TIM, TIM_CH_PULSE2_ANOD_END,
 			biphasicWave.cathodic_width_us + biphasicWave.interphase_gap_us + biphasicWave.anodic_width_us);
 	HAL_ERROR_CHECK(HAL_TIM_OC_Start_IT(&HANDLE_PULSE2_TIM, TIM_CH_PULSE2_ANOD_END));
-
-	__HAL_TIM_SET_COUNTER(&HANDLE_PULSE2_TIM, 0);
-	biphasicWave.is_running = true;
-	biphasic_custom_en = true;
 }
 
 /**

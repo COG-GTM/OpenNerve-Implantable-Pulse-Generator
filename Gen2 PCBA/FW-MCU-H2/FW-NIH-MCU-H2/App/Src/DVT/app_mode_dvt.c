@@ -617,13 +617,13 @@ static Cmd_Resp_t app_mode_dvt_command_req_parser(Cmd_Req_t req) {
 			resp.Status = STATUS_PAYLOAD_LEN_ERR;
 		}
 		else {
+			if (mocked.biphasic_en) {
+				app_func_stim_biphasic_start(mocked.imp_en);
+			} else {
 				if (mocked.src1) {
 					app_func_stim_stim1_start(mocked.imp_en);
 				}
-					if (mocked.biphasic_en) {
-						app_func_stim_biphasic_start(mocked.imp_en);
-					}
-				else if (mocked.src2) {
+				if (mocked.src2) {
 					if (mocked.vnsb_en) {
 						app_func_stim_sine_start();
 					}
@@ -631,7 +631,8 @@ static Cmd_Resp_t app_mode_dvt_command_req_parser(Cmd_Req_t req) {
 						app_func_stim_stim2_start();
 					}
 				}
-				app_func_stim_sync();
+			}
+			app_func_stim_sync();
 		}
 	}
 		break;
