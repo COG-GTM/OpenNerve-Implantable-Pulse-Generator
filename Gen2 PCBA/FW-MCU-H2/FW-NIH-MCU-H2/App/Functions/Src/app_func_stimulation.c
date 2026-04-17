@@ -887,6 +887,7 @@ void app_func_stim_sync(void) {
 	biphasicWave.phase			= BIPHASIC_PHASE_CATHODIC;
 	biphasicWave.ramp.timer_us	= 0;
 	if (biphasicWave.is_running) {
+		sel_ch_srcsnk_set(biphasicWave.sel_cathodic, biphasicWave.sel_enabled);
 		__HAL_TIM_SET_AUTORELOAD(&HANDLE_PULSE1_TIM, biphasicWave.cathodic_width_us - 1);
 	}
 
@@ -942,6 +943,7 @@ void app_func_stim_biphasic_para_set(Biphasic_Waveform_t biphasic_waveform) {
 
 	if (biphasicWave.is_running) {
 		biphasicWave.phase = BIPHASIC_PHASE_CATHODIC;
+		sel_ch_srcsnk_set(biphasicWave.sel_cathodic, biphasicWave.sel_enabled);
 		__HAL_TIM_SET_AUTORELOAD(&HANDLE_PULSE1_TIM, biphasicWave.cathodic_width_us - 1);
 		__HAL_TIM_SET_COUNTER(&HANDLE_PULSE1_TIM, 0);
 	}
@@ -1097,6 +1099,9 @@ void app_func_stim_biphasic_cb(void) {
 			biphasicWave.phase = BIPHASIC_PHASE_CATHODIC;
 			if (biphasicWave.train_timer_us < biphasicWave.train_on_duration_us && !biphasicWave.pause_output) {
 				sel_ch_srcsnk_set(biphasicWave.sel_cathodic, biphasicWave.sel_enabled);
+			}
+			else {
+				sel_ch_srcsnk_set(biphasicWave.sel_discharge, biphasicWave.sel_enabled);
 			}
 			__HAL_TIM_SET_AUTORELOAD(&HANDLE_PULSE1_TIM, biphasicWave.cathodic_width_us - 1);
 		}
