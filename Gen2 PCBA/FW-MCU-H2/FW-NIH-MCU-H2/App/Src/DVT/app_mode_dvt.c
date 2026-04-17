@@ -444,6 +444,35 @@ static Cmd_Resp_t app_mode_dvt_command_req_parser(Cmd_Req_t req) {
 	}
 		break;
 
+	case OP_SET_BIPHASIC_PARAMETERS:
+	{
+		len_payload = 12;
+		if (req.PayloadLen != len_payload) {
+			resp.Status = STATUS_PAYLOAD_LEN_ERR;
+		}
+		else {
+			uint16_t cathodic_w, anodic_w, interphase_g, pulse_freq, train_on, train_off;
+			uint8_t* payload_offset = req.Payload;
+			payload_offset = copyPayloadToStructField(payload_offset, (uint8_t*)&cathodic_w, sizeof(cathodic_w));
+			payload_offset = copyPayloadToStructField(payload_offset, (uint8_t*)&anodic_w, sizeof(anodic_w));
+			payload_offset = copyPayloadToStructField(payload_offset, (uint8_t*)&interphase_g, sizeof(interphase_g));
+			payload_offset = copyPayloadToStructField(payload_offset, (uint8_t*)&pulse_freq, sizeof(pulse_freq));
+			payload_offset = copyPayloadToStructField(payload_offset, (uint8_t*)&train_on, sizeof(train_on));
+			payload_offset = copyPayloadToStructField(payload_offset, (uint8_t*)&train_off, sizeof(train_off));
+
+			BiphasicCustom_Waveform_t biphasic_para = {
+					.cathodicWidth_us 		= (uint32_t)cathodic_w,
+					.anodicWidth_us 		= (uint32_t)anodic_w,
+					.interphaseGap_us 		= (uint32_t)interphase_g,
+					.pulsePeriod_us 		= (pulse_freq > 0) ? (uint32_t)(1000000.0 / (_Float64)pulse_freq) : 0,
+					.trainOnDuration_ms 	= (uint32_t)train_on,
+					.trainOffDuration_ms 	= (uint32_t)train_off,
+			};
+			app_func_stim_biphasic_para_set(biphasic_para);
+		}
+	}
+		break;
+
 	case OP_SET_DAC_AB_OUTPUT_VOLTAGE:
 	{
 		len_payload = 4;
