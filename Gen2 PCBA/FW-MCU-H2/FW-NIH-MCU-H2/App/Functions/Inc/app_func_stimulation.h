@@ -11,6 +11,7 @@
 #define HV_SUPPLY_MV			11633U			/*!< The voltage of HV supply, unit: mV */
 #define RAMP_STEPS_NUM			10U				/*!< The number of steps on the ramp */
 #define	SINE_PERIOD_POINTS		100U			/*!< The number of points on the sine period */
+#define	BIPHASIC_INTERPHASE_GAP_DEF_US	100U	/*!< Default interphase gap for biphasic waveform, unit: us */
 
 #define	STIMA_SEL_STIM1			false
 #define	STIMA_SEL_STIM2			true
@@ -47,12 +48,35 @@ typedef enum
 	POLR_NEG,
 } SINE_InterruptState;
 
+typedef enum
+{
+	BIPHASIC_PHASE_CATHODIC = 0U,		/*!< Cathodic (stimulating) phase */
+	BIPHASIC_PHASE_INTERPHASE_GAP,		/*!< Interphase gap (no current) */
+	BIPHASIC_PHASE_ANODIC,				/*!< Anodic (charge recovery) phase */
+	BIPHASIC_PHASE_INTERPULSE,			/*!< Interpulse interval (rest) */
+} Biphasic_Phase_t;
+
+typedef enum
+{
+	WAVEFORM_TYPE_MONOPHASIC = 0U,		/*!< Monophasic pulse waveform (default) */
+	WAVEFORM_TYPE_BIPHASIC,				/*!< Biphasic pulse waveform */
+} Waveform_Type_t;
+
 typedef struct {
 	uint32_t 	pulseWidth_us;				/*!< The pulse width of the stimulus waveform, unit: us */
 	uint32_t 	pulsePeriod_us;				/*!< The pulse period of the stimulus waveform, unit: us */
 	uint32_t 	trainOnDuration_ms;			/*!< The train on duration of the stimulus waveform, unit: ms */
 	uint32_t 	trainOffDuration_ms;		/*!< The train off duration of the stimulus waveform, unit: ms */
 } Stimulus_Waveform_t;
+
+typedef struct {
+	uint32_t 	cathodicWidth_us;			/*!< Cathodic (stimulating) phase width, unit: us */
+	uint32_t 	anodicWidth_us;				/*!< Anodic (charge recovery) phase width, unit: us */
+	uint32_t 	interphaseGap_us;			/*!< Gap between cathodic and anodic phases, unit: us */
+	uint32_t 	pulsePeriod_us;				/*!< Overall pulse period, unit: us */
+	uint32_t 	trainOnDuration_ms;			/*!< Train on duration, unit: ms */
+	uint32_t 	trainOffDuration_ms;		/*!< Train off duration, unit: ms */
+} Biphasic_Waveform_t;
 
 typedef struct {
 	uint32_t	sinePeriod_us;				/*!< The period of the sine waveform, unit: us */
@@ -114,7 +138,7 @@ typedef struct {
 	uint32_t 	pwm_pulse_width_us;				/*!< The pulse width of the PWM, unit: us */
 	uint32_t 	pwm_period_us;					/*!< The period of the PWM, unit: us */
 
-	uint32_t 	train_period_us;				/*!< The period of the train signal, unit: us */
+	uint32_t 	train_period_us;					/*!< The period of the train signal, unit: us */
 	uint32_t 	train_on_duration_us;			/*!< Duration of train-on time, unit: us */
 	uint32_t 	train_timer_us;					/*!< The timer of the train signal, unit: us */
 
@@ -123,7 +147,7 @@ typedef struct {
 
 	Stim_Sel_Ch_t sel_positive;					/*!< The multiplexer positive settings */
 	Stim_Sel_Ch_t sel_negative;					/*!< The multiplexer negative settings */
-	Stim_Sel_Ch_t sel_discharge;				/*!< The multiplexer discharge settings */
+	Stim_Sel_Ch_t sel_discharge;					/*!< The multiplexer discharge settings */
 	Stim_Sel_Ch_t sel_enabled;					/*!< The multiplexer enabled CH */
 
 	bool		pause_output;					/*!< Pause the signal output. */
@@ -132,6 +156,29 @@ typedef struct {
 
 	Ramp_t 		ramp;							/*!< Ramp up and down settings. */
 } PulseWave_t;
+
+typedef struct {
+	uint32_t 	cathodic_width_us;				/*!< Cathodic phase width, unit: us */
+	uint32_t 	anodic_width_us;				/*!< Anodic phase width, unit: us */
+	uint32_t 	interphase_gap_us;				/*!< Interphase gap duration, unit: us */
+	uint32_t 	interpulse_us;					/*!< Interpulse interval (rest), unit: us */
+
+	uint32_t 	train_period_us;					/*!< The period of the train signal, unit: us */
+	uint32_t 	train_on_duration_us;			/*!< Duration of train-on time, unit: us */
+	uint32_t 	train_timer_us;					/*!< The timer of the train signal, unit: us */
+
+	bool		is_running;						/*!< The waveform is running */
+	Biphasic_Phase_t phase;						/*!< Current phase in the biphasic cycle */
+
+	Stim_Sel_Ch_t sel_cathodic;					/*!< The multiplexer cathodic settings */
+	Stim_Sel_Ch_t sel_anodic;					/*!< The multiplexer anodic settings */
+	Stim_Sel_Ch_t sel_discharge;					/*!< The multiplexer discharge settings */
+	Stim_Sel_Ch_t sel_enabled;					/*!< The multiplexer enabled CH */
+
+	bool		pause_output;					/*!< Pause the signal output. */
+
+	Ramp_t 		ramp;							/*!< Ramp up and down settings. */
+} BiphasicWave_t;
 
 typedef struct {
 	uint32_t tim_cnt;							/*!< The timer counts of the point on the sine period */
@@ -342,5 +389,30 @@ void app_func_stim_sync(void);
  * 
  */
 void app_func_stim_off(void);
+
+/**
+ * @brief Set the waveform settings of biphasic stimulation
+ *
+ * @param biphasic_waveform The biphasic waveform settings
+ */
+void app_func_stim_biphasic_para_set(Biphasic_Waveform_t biphasic_waveform);
+
+/**
+ * @brief Generate biphasic waveform based on waveform settings and current source settings
+ *
+ */
+void app_func_stim_biphasic_start(void);
+
+/**
+ * @brief Stop biphasic waveform
+ *
+ */
+void app_func_stim_biphasic_stop(void);
+
+/**
+ * @brief Timer callback of biphasic waveform
+ *
+ */
+void app_func_stim_biphasic_cb(void);
 
 #endif /* FUNCTIONS_INC_APP_FUNC_STIMULATION_H_ */
