@@ -8,6 +8,8 @@
 
 #include "stm32u5xx_ll_tim.h"
 
+extern volatile bool biphasic_custom_en;
+
 #define	BER_HI_TIME_US	10
 #define	ZERO_HOLD		0.0
 
@@ -541,7 +543,7 @@ void app_func_stim_biphasic_para_set(BiphasicCustom_Waveform_t waveform) {
  * @param imc_en The enabled status of IMC
  */
 void app_func_stim_biphasic_start(bool imc_en) {
-	if (biphasicWave.is_running || pulseWave2.is_running) {
+	if (biphasicWave.is_running || pulseWave2.is_running || pulseWave1.is_running) {
 		return;
 	}
 
@@ -601,6 +603,7 @@ void app_func_stim_biphasic_start(bool imc_en) {
 
 	__HAL_TIM_SET_COUNTER(&HANDLE_PULSE2_TIM, 0);
 	biphasicWave.is_running = true;
+	biphasic_custom_en = true;
 }
 
 /**
@@ -609,7 +612,7 @@ void app_func_stim_biphasic_start(bool imc_en) {
  * @param imc_en The enabled status of IMC
  */
 void app_func_stim_stim1_start(bool imc_en) {
-	if (pulseWave1.is_running) {
+	if (pulseWave1.is_running || biphasicWave.is_running) {
 		return;
 	}
 
@@ -769,6 +772,7 @@ void app_func_stim_biphasic_stop(void) {
 		HAL_ERROR_CHECK(HAL_TIM_PWM_Stop_IT(&HANDLE_PULSE2_TIM, TIM_CH_PULSE2_TO_LOW));
 		HAL_ERROR_CHECK(HAL_TIM_OC_Stop_IT(&HANDLE_PULSE2_TIM, TIM_CH_PULSE2_BEF_HI));
 		HAL_ERROR_CHECK(HAL_TIM_OC_Stop_IT(&HANDLE_PULSE2_TIM, TIM_CH_PULSE2_ANOD_END));
+		biphasic_custom_en = false;
 		(void)memset(&biphasicWave, 0, sizeof(biphasicWave));
 	}
 }
