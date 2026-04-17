@@ -24,14 +24,16 @@
 
 /* USER CODE END 0 */
 
+#ifdef HAL_HASH_MODULE_ENABLED
 HASH_HandleTypeDef hhash;
+#endif
 
 /* HASH init function */
 void MX_HASH_Init(void)
 {
 
   /* USER CODE BEGIN HASH_Init 0 */
-
+#ifdef STM32U585xx
   /* USER CODE END HASH_Init 0 */
 
   /* USER CODE BEGIN HASH_Init 1 */
@@ -43,11 +45,12 @@ void MX_HASH_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN HASH_Init 2 */
-
+#endif
   /* USER CODE END HASH_Init 2 */
 
 }
 
+#ifdef HAL_HASH_MODULE_ENABLED
 void HAL_HASH_MspInit(HASH_HandleTypeDef* hashHandle)
 {
 
@@ -80,6 +83,7 @@ void HAL_HASH_MspDeInit(HASH_HandleTypeDef* hashHandle)
 
   /* USER CODE END HASH_MspDeInit 1 */
 }
+#endif /* HAL_HASH_MODULE_ENABLED */
 
 /* USER CODE BEGIN 1 */
 

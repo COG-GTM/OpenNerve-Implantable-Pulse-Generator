@@ -59,7 +59,9 @@ extern DMA_HandleTypeDef handle_GPDMA1_Channel0;
 extern DMA_HandleTypeDef handle_GPDMA1_Channel1;
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc4;
+#ifdef HAL_HASH_MODULE_ENABLED
 extern HASH_HandleTypeDef hhash;
+#endif
 extern I2C_HandleTypeDef hi2c2;
 extern I2C_HandleTypeDef hi2c3;
 extern IWDG_HandleTypeDef hiwdg;
@@ -67,7 +69,9 @@ extern LPTIM_HandleTypeDef hlptim1;
 extern LPTIM_HandleTypeDef hlptim2;
 extern LPTIM_HandleTypeDef hlptim3;
 extern LPTIM_HandleTypeDef hlptim4;
+#ifdef HAL_PKA_MODULE_ENABLED
 extern PKA_HandleTypeDef hpka;
+#endif
 extern RNG_HandleTypeDef hrng;
 extern RTC_HandleTypeDef hrtc;
 extern SPI_HandleTypeDef hspi1;
@@ -513,6 +517,7 @@ void RNG_IRQHandler(void)
   /* USER CODE END RNG_IRQn 1 */
 }
 
+#ifdef HAL_HASH_MODULE_ENABLED
 /**
   * @brief This function handles HASH global interrupt.
   */
@@ -526,7 +531,9 @@ void HASH_IRQHandler(void)
 
   /* USER CODE END HASH_IRQn 1 */
 }
+#endif /* HAL_HASH_MODULE_ENABLED */
 
+#ifdef HAL_PKA_MODULE_ENABLED
 /**
   * @brief This function handles PKA global interrupt.
   */
@@ -540,6 +547,7 @@ void PKA_IRQHandler(void)
 
   /* USER CODE END PKA_IRQn 1 */
 }
+#endif /* HAL_PKA_MODULE_ENABLED */
 
 /**
   * @brief This function handles LPTIM3 global interrupt.
