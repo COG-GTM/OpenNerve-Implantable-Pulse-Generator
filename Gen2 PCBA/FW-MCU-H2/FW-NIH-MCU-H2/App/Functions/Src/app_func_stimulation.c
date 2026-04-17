@@ -14,6 +14,7 @@
 PulseWave_t pulseWave1 = {0};
 PulseWave_t pulseWave2 = {0};
 SineWave_t sineWave = {0};
+BiphasicWave_t biphasicWave = {0};
 
 Stim_Sel_t stimSel = {0};
 Current_Sources_t srcSnk = {0};
@@ -416,7 +417,7 @@ void app_func_stim_sel_set(Stim_Sel_t sel) {
  */
 void app_func_stim_curr_src_set(Current_Sources_t current_sources) {
 	srcSnk = current_sources;
-	if (!pulseWave1.is_running && !pulseWave2.is_running && !sineWave.is_running) {
+	if (!pulseWave1.is_running && !pulseWave2.is_running && !sineWave.is_running && !biphasicWave.is_running) {
 		HAL_GPIO_WritePin(SRC1_GPIO_Port, 	SRC1_Pin, 	(current_sources.src1)?GPIO_PIN_SET:GPIO_PIN_RESET); /* parasoft-suppress MISRAC2012-RULE_11_4-a "This definition comes from HAL." */
 		HAL_GPIO_WritePin(SRC2_GPIO_Port, 	SRC2_Pin, 	(current_sources.src2)?GPIO_PIN_SET:GPIO_PIN_RESET); /* parasoft-suppress MISRAC2012-RULE_11_4-a "This definition comes from HAL." */
 		HAL_GPIO_WritePin(SNK1_GPIO_Port, 	SNK1_Pin, 	(current_sources.snk1)?GPIO_PIN_SET:GPIO_PIN_RESET); /* parasoft-suppress MISRAC2012-RULE_11_4-a "This definition comes from HAL." */
@@ -471,7 +472,7 @@ void app_func_stim_circuit_para2_set(Stimulus_Waveform_t stimulus_waveform) {
  * @param imc_en The enabled status of IMC
  */
 void app_func_stim_stim1_start(bool imc_en) {
-	if (pulseWave1.is_running) {
+	if (pulseWave1.is_running || biphasicWave.is_running) {
 		return;
 	}
 
@@ -871,6 +872,158 @@ void app_func_stim_sine_cb(SINE_InterruptState state) {
 }
 
 /**
+ * @brief Set the waveform settings of biphasic stimulation
+ *
+ * @param biphasic_waveform The waveform settings
+ */
+void app_func_stim_biphasic_para_set(Biphasic_Waveform_t biphasic_waveform) {
+	biphasicWave.cathodic_width_us = biphasic_waveform.cathodicWidth_us;
+	biphasicWave.anodic_width_us = biphasic_waveform.anodicWidth_us;
+	biphasicWave.interphase_gap_us = biphasic_waveform.interphaseGap_us;
+	biphasicWave.pulse_period_us = biphasic_waveform.pulsePeriod_us;
+
+	biphasicWave.train_period_us = (biphasic_waveform.trainOnDuration_ms + biphasic_waveform.trainOffDuration_ms) * 1000;
+	biphasicWave.train_on_duration_us = biphasic_waveform.trainOnDuration_ms * 1000;
+
+	if (biphasicWave.is_running) {
+		__HAL_TIM_SET_AUTORELOAD(&HANDLE_PULSE1_TIM, biphasicWave.pulse_period_us - 1);
+		__HAL_TIM_SET_COMPARE(&HANDLE_PULSE1_TIM, TIM_CHANNEL_1, biphasicWave.cathodic_width_us);
+		__HAL_TIM_SET_COMPARE(&HANDLE_PULSE1_TIM, TIM_CHANNEL_2, biphasicWave.cathodic_width_us + biphasicWave.interphase_gap_us);
+		__HAL_TIM_SET_COMPARE(&HANDLE_PULSE1_TIM, TIM_CHANNEL_3, biphasicWave.cathodic_width_us + biphasicWave.interphase_gap_us + biphasicWave.anodic_width_us);
+		app_func_stim_sync();
+	}
+}
+
+/**
+ * @brief Generate biphasic waveforms based on waveform settings and current source settings
+ *
+ * @param imc_en The enabled status of IMC
+ */
+void app_func_stim_biphasic_start(bool imc_en) {
+	if (biphasicWave.is_running || pulseWave1.is_running) {
+		return;
+	}
+
+	biphasicWave.train_timer_us	= 0;
+	biphasicWave.ramp.timer_us	= 0;
+	biphasicWave.pause_output	= false;
+
+	biphasicWave.sel_positive	= stimSel.sel_ch;
+
+	biphasicWave.sel_negative.ch1 = !biphasicWave.sel_positive.ch1;
+	biphasicWave.sel_negative.ch2 = !biphasicWave.sel_positive.ch2;
+	biphasicWave.sel_negative.ch3 = !biphasicWave.sel_positive.ch3;
+	biphasicWave.sel_negative.ch4 = !biphasicWave.sel_positive.ch4;
+	biphasicWave.sel_negative.encl = !biphasicWave.sel_positive.encl;
+
+	biphasicWave.sel_discharge.ch1 = STIM_SEL_CH1_SINK_CH1;
+	biphasicWave.sel_discharge.ch2 = STIM_SEL_CH2_SINK_CH2;
+	biphasicWave.sel_discharge.ch3 = STIM_SEL_CH3_SINK_CH3;
+	biphasicWave.sel_discharge.ch4 = STIM_SEL_CH4_SINK_CH4;
+	biphasicWave.sel_discharge.encl = STIM_SEL_ENCL_SINK_ENCL;
+
+	memset(&biphasicWave.sel_enabled, 0, sizeof(Stim_Sel_Ch_t));
+	if (srcSnk.src1 == true) {
+		if (stimSel.stimA == STIMA_SEL_STIM1) {
+			biphasicWave.sel_enabled.ch1 = srcSnk.snk1;
+			biphasicWave.sel_enabled.ch2 = srcSnk.snk2;
+			biphasicWave.sel_enabled.encl = srcSnk.snk5;
+		}
+		if (stimSel.stimB == STIMB_SEL_STIM1) {
+			biphasicWave.sel_enabled.ch3 = srcSnk.snk3;
+			biphasicWave.sel_enabled.ch4 = srcSnk.snk4;
+		}
+	}
+
+	if (imc_en) {
+		biphasicWave.train_period_us = biphasicWave.train_on_duration_us;
+	}
+
+	/* Set up initial cathodic phase MUX state before starting timer,
+	 * since PeriodElapsed won't fire until the first counter overflow */
+	sel_ch_srcsnk_set(biphasicWave.sel_negative, biphasicWave.sel_enabled);
+
+	__HAL_TIM_SET_AUTORELOAD(&HANDLE_PULSE1_TIM, biphasicWave.pulse_period_us - 1);
+	HAL_ERROR_CHECK(HAL_TIM_Base_Start_IT(&HANDLE_PULSE1_TIM));
+
+	/* Channel 1: end of cathodic phase -> transition to interphase gap */
+	__HAL_TIM_SET_COMPARE(&HANDLE_PULSE1_TIM, TIM_CHANNEL_1, biphasicWave.cathodic_width_us);
+	HAL_ERROR_CHECK(HAL_TIM_OC_Start_IT(&HANDLE_PULSE1_TIM, TIM_CHANNEL_1));
+
+	/* Channel 2: end of interphase gap -> transition to anodic phase */
+	__HAL_TIM_SET_COMPARE(&HANDLE_PULSE1_TIM, TIM_CHANNEL_2, biphasicWave.cathodic_width_us + biphasicWave.interphase_gap_us);
+	HAL_ERROR_CHECK(HAL_TIM_OC_Start_IT(&HANDLE_PULSE1_TIM, TIM_CHANNEL_2));
+
+	/* Channel 3: end of anodic phase -> transition to idle */
+	__HAL_TIM_SET_COMPARE(&HANDLE_PULSE1_TIM, TIM_CHANNEL_3, biphasicWave.cathodic_width_us + biphasicWave.interphase_gap_us + biphasicWave.anodic_width_us);
+	HAL_ERROR_CHECK(HAL_TIM_OC_Start_IT(&HANDLE_PULSE1_TIM, TIM_CHANNEL_3));
+
+	__HAL_TIM_SET_COUNTER(&HANDLE_PULSE1_TIM, 0);
+	biphasicWave.is_running = true;
+}
+
+/**
+ * @brief Stop biphasic waveform
+ *
+ */
+void app_func_stim_biphasic_stop(void) {
+	if (biphasicWave.is_running) {
+		HAL_ERROR_CHECK(HAL_TIM_Base_Stop_IT(&HANDLE_PULSE1_TIM));
+		HAL_ERROR_CHECK(HAL_TIM_OC_Stop_IT(&HANDLE_PULSE1_TIM, TIM_CHANNEL_1));
+		HAL_ERROR_CHECK(HAL_TIM_OC_Stop_IT(&HANDLE_PULSE1_TIM, TIM_CHANNEL_2));
+		HAL_ERROR_CHECK(HAL_TIM_OC_Stop_IT(&HANDLE_PULSE1_TIM, TIM_CHANNEL_3));
+		(void)memset(&biphasicWave, 0, sizeof(biphasicWave));
+	}
+}
+
+/**
+ * @brief Check if biphasic waveform is currently running
+ *
+ * @return bool true if running, false otherwise
+ */
+bool app_func_stim_biphasic_is_running(void) {
+	return biphasicWave.is_running;
+}
+
+/**
+ * @brief Timer callback of the biphasic waveform
+ *
+ * @param state Callback state
+ */
+void app_func_stim_biphasic_cb(BIPHASIC_InterruptState state) {
+	if (state == BIPHASIC_CATHODIC) {
+		uint32_t arr = __HAL_TIM_GET_AUTORELOAD(&HANDLE_PULSE1_TIM) + 1;
+		uint32_t cnt = __HAL_TIM_GET_COUNTER(&HANDLE_PULSE1_TIM);
+		uint32_t curr_timer = (biphasicWave.train_timer_us + cnt) % biphasicWave.train_period_us;
+		biphasicWave.train_timer_us = (biphasicWave.train_timer_us + arr) % biphasicWave.train_period_us;
+
+		if (curr_timer < biphasicWave.train_on_duration_us && !biphasicWave.pause_output) {
+			sel_ch_srcsnk_set(biphasicWave.sel_negative, biphasicWave.sel_enabled);
+		}
+		else {
+			sel_ch_srcsnk_set(biphasicWave.sel_discharge, biphasicWave.sel_enabled);
+		}
+	}
+	else if (state == BIPHASIC_INTERPHASE) {
+		sel_ch_srcsnk_set(biphasicWave.sel_discharge, biphasicWave.sel_enabled);
+	}
+	else if (state == BIPHASIC_ANODIC) {
+		uint32_t cnt = __HAL_TIM_GET_COUNTER(&HANDLE_PULSE1_TIM);
+		uint32_t curr_timer = (biphasicWave.train_timer_us + cnt) % biphasicWave.train_period_us;
+
+		if (curr_timer < biphasicWave.train_on_duration_us && !biphasicWave.pause_output) {
+			sel_ch_srcsnk_set(biphasicWave.sel_positive, biphasicWave.sel_enabled);
+		}
+		else {
+			sel_ch_srcsnk_set(biphasicWave.sel_discharge, biphasicWave.sel_enabled);
+		}
+	}
+	else if (state == BIPHASIC_IDLE) {
+		sel_ch_srcsnk_set(biphasicWave.sel_discharge, biphasicWave.sel_enabled);
+	}
+}
+
+/**
  * @brief Synchronizes the timers of all waveforms.
  *
  */
@@ -882,6 +1035,8 @@ void app_func_stim_sync(void) {
 	pulseWave2.ramp.timer_us 	= 0;
 	pulseWave2.is_positive 		= true;
 	sineWave.train_timer_us 	= 0;
+	biphasicWave.train_timer_us	= 0;
+	biphasicWave.ramp.timer_us	= 0;
 
 	__HAL_TIM_SET_COUNTER(&HANDLE_PULSE1_TIM, 0);
 	__HAL_TIM_SET_COUNTER(&HANDLE_PULSE2_TIM, 0);
@@ -896,6 +1051,7 @@ void app_func_stim_off(void) {
 	app_func_stim_stim1_stop();
 	app_func_stim_stim2_stop();
 	app_func_stim_sine_stop();
+	app_func_stim_biphasic_stop();
 
 	app_func_stim_stimulus_enable(false);
 	app_func_stim_mux_enable(false);
